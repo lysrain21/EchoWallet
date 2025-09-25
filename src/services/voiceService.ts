@@ -21,12 +21,23 @@ interface SpeechRecognitionErrorEvent {
 class VoiceService {
   private recognition: any = null
   private synthesis: SpeechSynthesis | null = null
+  private availableVoices: SpeechSynthesisVoice[] = []
   private isListening = false
   private onCommandCallback?: (command: VoiceCommand) => void
   private onErrorCallback?: (error: string) => void
 
   constructor() {
     this.initSpeechRecognition()
+    this.initSpeechSynthesis()
+  }
+
+  private ensureSpeechRecognition() {
+    if (this.recognition) return
+    this.initSpeechRecognition()
+  }
+
+  private ensureSpeechSynthesis() {
+    if (this.synthesis) return
     this.initSpeechSynthesis()
   }
 
@@ -118,12 +129,23 @@ class VoiceService {
   private initSpeechSynthesis() {
     if (typeof window === 'undefined') return
     this.synthesis = window.speechSynthesis
+
+    const populateVoices = () => {
+      if (!this.synthesis) return
+      this.availableVoices = this.synthesis.getVoices()
+    }
+
+    populateVoices()
+    if (this.synthesis) {
+      this.synthesis.addEventListener('voiceschanged', populateVoices)
+    }
   }
 
   /**
    * Start listening for voice input.
    */
   startListening(onCommand: (command: VoiceCommand) => void, onError?: (error: string) => void) {
+    this.ensureSpeechRecognition()
     if (!this.recognition) {
       onError?.('Speech recognition is not available')
       return
@@ -150,6 +172,7 @@ class VoiceService {
    * Start listening for raw text (used during step-by-step flows).
    */
   startListeningForText(onText: (text: string) => void, onError?: (error: string) => void) {
+    this.ensureSpeechRecognition()
     if (!this.recognition) {
       onError?.('Speech recognition is not available')
       return
@@ -193,6 +216,7 @@ class VoiceService {
    * Speak a message using speech synthesis.
    */
   speak(text: string, options?: { rate?: number; pitch?: number; volume?: number }) {
+    this.ensureSpeechSynthesis()
     if (!this.synthesis) {
       console.warn('Speech synthesis is not available')
       return
@@ -202,6 +226,12 @@ class VoiceService {
     this.synthesis.cancel()
 
     const utterance = new SpeechSynthesisUtterance(text)
+    if (this.availableVoices.length === 0) {
+      this.availableVoices = this.synthesis.getVoices()
+    }
+    if (this.availableVoices.length > 0) {
+      utterance.voice = this.availableVoices[0]
+    }
     utterance.lang = WALLET_CONFIG.SPEECH_CONFIG.DEFAULT_LANGUAGE
     utterance.rate = options?.rate || 1
     utterance.pitch = options?.pitch || 1
@@ -254,7 +284,13 @@ class VoiceService {
   private parseCommand(transcript: string): VoiceCommand | null {
     const text = transcript.toLowerCase()
 
-    if (text.includes('create wallet') || text.includes('new wallet') || text.includes('generate wallet')) {
+    if (
+      text.includes('create wallet') ||
+      text.includes('create a wallet') ||
+      text.includes('create new wallet') ||
+      text.includes('new wallet') ||
+      text.includes('generate wallet')
+    ) {
       return { type: 'create_wallet', confidence: 0 }
     }
 

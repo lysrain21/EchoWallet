@@ -3,6 +3,18 @@
  * Wallet configuration including network and speech settings.
  */
 
+const INFURA_KEY = process.env.NEXT_PUBLIC_INFURA_KEY || ''
+
+const buildRpcUrl = (network: 'sepolia' | 'mainnet') => {
+  if (INFURA_KEY) {
+    return `https://${network}.infura.io/v3/${INFURA_KEY}`
+  }
+
+  return network === 'sepolia'
+    ? 'https://ethereum-sepolia-rpc.publicnode.com'
+    : 'https://cloudflare-eth.com'
+}
+
 export const WALLET_CONFIG = {
   // ZeroDev configuration
   ZERODEV_PROJECT_ID: process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID || '',
@@ -12,7 +24,7 @@ export const WALLET_CONFIG = {
     sepolia: {
       chainId: 11155111,
       name: 'Sepolia Testnet',
-      rpcUrl: 'https://sepolia.infura.io/v3/' + (process.env.NEXT_PUBLIC_INFURA_KEY || ''),
+      rpcUrl: buildRpcUrl('sepolia'),
       bundlerUrl: `https://rpc.zerodev.app/api/v2/bundler/${process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID}`,
       paymasterUrl: `https://rpc.zerodev.app/api/v2/paymaster/${process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID}`,
       entryPointAddress: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
@@ -21,7 +33,7 @@ export const WALLET_CONFIG = {
     mainnet: {
       chainId: 1,
       name: 'Ethereum Mainnet',
-      rpcUrl: 'https://mainnet.infura.io/v3/' + (process.env.NEXT_PUBLIC_INFURA_KEY || ''),
+      rpcUrl: buildRpcUrl('mainnet'),
       bundlerUrl: `https://rpc.zerodev.app/api/v2/bundler/${process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID}`,
       paymasterUrl: `https://rpc.zerodev.app/api/v2/paymaster/${process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID}`,
       entryPointAddress: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
