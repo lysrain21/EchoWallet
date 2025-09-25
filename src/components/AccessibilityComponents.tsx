@@ -152,7 +152,7 @@ export function AccessibleText({
  * Accessible wallet status component
  */
 export function WalletStatus() {
-  const { wallet, balance, isLoading, error } = useWalletStore()
+  const { wallet, isLoading, error } = useWalletStore()
   const voiceState = useVoiceState()
 
   if (isLoading) {

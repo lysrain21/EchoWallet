@@ -1,5 +1,5 @@
 /**
- * Echo Wallet - 联系人类型定义
+ * Echo Wallet - Contact type definitions
  */
 
 export interface Contact {

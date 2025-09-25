@@ -140,6 +140,7 @@ class VoiceService {
     try {
       this.recognition.start()
     } catch (error) {
+      console.error('Unable to start speech recognition:', error)
       this.isListening = false
       onError?.('Unable to start speech recognition')
     }
@@ -161,7 +162,9 @@ class VoiceService {
     // Use a temporary callback that passes the raw transcript without parsing
     this.onCommandCallback = (command) => {
       // Pass the command text when available; otherwise fall back to the command type
-      const text = command.parameters?.text || command.type
+      const text = typeof command.parameters?.text === 'string'
+        ? command.parameters.text
+        : command.type
       onText(text)
     }
     this.onErrorCallback = onError
@@ -170,6 +173,7 @@ class VoiceService {
     try {
       this.recognition.start()
     } catch (error) {
+      console.error('Unable to start speech recognition:', error)
       this.isListening = false
       onError?.('Unable to start speech recognition')
     }

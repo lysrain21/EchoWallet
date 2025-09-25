@@ -25,37 +25,78 @@ export function MinimalVoiceWallet() {
     setShowFeedback(true)
   }, [])
 
+  const { isListening, isProcessing, lastCommand } = voiceState
+
+  const startVoiceInteraction = useCallback(() => {
+    if (isProcessing) {
+      handleVoiceFeedback('The system is processing, please wait.')
+      return
+    }
+
+    if (isListening) {
+      handleVoiceFeedback('Listening, please speak.')
+      return
+    }
+
+    commandService.startListening()
+    handleVoiceFeedback('Listening started. Please say your command.')
+  }, [handleVoiceFeedback, isListening, isProcessing])
+
+  const showHelp = useCallback(() => {
+    const helpMessage = `
+      Echo Wallet voice commands:
+      Create wallet – generate a new wallet address
+      Import wallet – recover using biometrics  
+      Check balance – hear your current balance
+      Transfer – start the guided transfer flow
+      Check transaction – review transaction status
+
+      Keyboard shortcuts:
+      Space – start voice input
+      Escape – stop listening
+      R – repeat last command
+      F1 – show this help
+    `
+    voiceService.speak(helpMessage)
+  }, [])
+
+  const handleScreenTouch = useCallback(() => {
+    if (!isListening && !isProcessing) {
+      startVoiceInteraction()
+    }
+  }, [isListening, isProcessing, startVoiceInteraction])
+
+  type SpeakOptions = { rate?: number; pitch?: number; volume?: number }
+
   // Initialize voice service and welcome message
   useEffect(() => {
+    const originalSpeak = voiceService.speak.bind(voiceService) as typeof voiceService.speak
+    voiceService.speak = (text: string, options?: SpeakOptions) => {
+      originalSpeak(text, options)
+      handleVoiceFeedback(text)
+    }
+
     const hasPlayedBefore = localStorage.getItem('echo-welcome-played')
     
     if (!hasPlayedBefore && !hasPlayedWelcome) {
       setTimeout(() => {
         const welcomeMessage = 'Welcome to Echo Wallet, a Web3 wallet built for blind and low-vision users. Press Space or tap the screen to start voice control.'
         voiceService.speak(welcomeMessage)
-        handleVoiceFeedback(welcomeMessage)
         setHasPlayedWelcome(true)
         localStorage.setItem('echo-welcome-played', 'true')
       }, 1000)
     }
 
-    // Listen to feedback from the voice service
-    const originalSpeak = voiceService.speak.bind(voiceService)
-    voiceService.speak = (text: string, options?: any) => {
-      originalSpeak(text, options)
-      handleVoiceFeedback(text)
-    }
-
     // Global keyboard events
     const handleKeyDown = (event: KeyboardEvent) => {
       // Space starts listening
-      if (event.code === 'Space' && !voiceState.isListening && !voiceState.isProcessing) {
+      if (event.code === 'Space' && !isListening && !isProcessing) {
         event.preventDefault()
         startVoiceInteraction()
       }
       
       // Escape stops listening
-      if (event.key === 'Escape' && voiceState.isListening) {
+      if (event.key === 'Escape' && isListening) {
         event.preventDefault()
         commandService.stopListening()
         handleVoiceFeedback('Voice listening stopped.')
@@ -64,14 +105,11 @@ export function MinimalVoiceWallet() {
       // R repeats the last command
       if (event.key === 'r' || event.key === 'R') {
         event.preventDefault()
-        if (voiceState.lastCommand) {
-          const message = `Repeating last command: ${voiceState.lastCommand.parameters?.text || 'unknown command'}`
+        if (lastCommand) {
+          const message = `Repeating last command: ${lastCommand.parameters?.text || 'unknown command'}`
           voiceService.speak(message)
-          handleVoiceFeedback(message)
         } else {
-          const message = 'No command available to repeat.'
-          voiceService.speak(message)
-          handleVoiceFeedback(message)
+          voiceService.speak('No command available to repeat.')
         }
       }
 
@@ -83,51 +121,11 @@ export function MinimalVoiceWallet() {
     }
 
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [voiceState, hasPlayedWelcome, handleVoiceFeedback])
-
-  // Start voice interaction
-  const startVoiceInteraction = useCallback(() => {
-    if (voiceState.isProcessing) {
-      handleVoiceFeedback('The system is processing, please wait.')
-      return
+    return () => {
+      voiceService.speak = originalSpeak
+      window.removeEventListener('keydown', handleKeyDown)
     }
-
-    if (voiceState.isListening) {
-      handleVoiceFeedback('Listening, please speak.')
-      return
-    }
-
-    commandService.startListening()
-    handleVoiceFeedback('Listening started. Please say your command.')
-  }, [voiceState, handleVoiceFeedback])
-
-  // Display help information
-  const showHelp = useCallback(() => {
-    const helpMessage = `
-      Echo Wallet voice commands:
-      Create wallet – generate a new wallet address
-      Import wallet – recover using biometrics  
-      Check balance – hear your current balance
-      Transfer – start the guided transfer flow
-      Check transaction – review transaction status
-      
-      Keyboard shortcuts:
-      Space – start voice input
-      Escape – stop listening
-      R – repeat last command
-      F1 – show this help
-    `
-    voiceService.speak(helpMessage)
-    handleVoiceFeedback(helpMessage)
-  }, [handleVoiceFeedback])
-
-  // Handle tap events for touch devices
-  const handleScreenTouch = useCallback(() => {
-    if (!voiceState.isListening && !voiceState.isProcessing) {
-      startVoiceInteraction()
-    }
-  }, [voiceState, startVoiceInteraction])
+  }, [handleVoiceFeedback, hasPlayedWelcome, isListening, isProcessing, lastCommand, showHelp, startVoiceInteraction])
 
   return (
     <div 

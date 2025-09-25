@@ -53,9 +53,10 @@ export function WalletVerification() {
 
       // 3. Balance query test
       try {
-        const balance = await walletService.getETHBalance(wallet.address)
-        details.push('💰 Balance query succeeded')
+        const balanceValue = await walletService.getETHBalance(wallet.address)
+        details.push(`💰 Balance query succeeded: ${balanceValue} ETH`)
       } catch (error) {
+        console.error('Balance query failed:', error)
         details.push('❌ Balance query failed')
       }
 

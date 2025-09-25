@@ -3,11 +3,10 @@
  * Coordinates speech recognition with wallet operations.
  */
 
-import { VoiceCommand, TransferRequest } from '@/types'
+import { VoiceCommand, TransferRequest, TokenBalance } from '@/types'
 import { voiceService } from './voiceService'
 import { walletService } from './walletService'
 import { useWalletStore } from '@/store'
-import { TTS_TEMPLATES } from '@/config'
 import { contactsService } from './contactsService'
 import { VoiceRecognitionOptimizer } from './voiceOptimizer'
 
@@ -70,7 +69,9 @@ class CommandService {
    */
   private async handleCommand(command: VoiceCommand) {
     const { setVoiceState, setLoading, setError } = useWalletStore.getState()
-    
+    const parameterText = this.getParameterString(command.parameters, 'text')
+    const isCompleteTransfer = this.getParameterBoolean(command.parameters, 'isComplete')
+
     try {
       this.isProcessing = true
       setVoiceState({ isProcessing: true, lastCommand: command })
@@ -94,10 +95,10 @@ class CommandService {
         case 'transfer':
           // Check whether a transfer flow is already active
           if (this.transferSteps.isActive) {
-            await this.handleTransferStepInput(command.parameters?.text || '')
+            await this.handleTransferStepInput(parameterText ?? '')
           } else {
             // Determine whether the command already includes full transfer details
-            if (command.parameters?.isComplete) {
+            if (isCompleteTransfer) {
               // For complete transfer commands, use the optimized flow
               await this.handleCompleteTransferCommand(command.parameters)
             } else {
@@ -108,20 +109,20 @@ class CommandService {
           break
 
         case 'contacts':
-          await this.handleContactCommand(command.parameters?.text || '')
+          await this.handleContactCommand(parameterText ?? '')
           break
 
         case 'text_input':
           // Handle text input during the transfer flow
           if (this.transferSteps.isActive) {
-            await this.handleTransferStepInput(command.parameters?.text || '')
+            await this.handleTransferStepInput(parameterText ?? '')
           } else {
             voiceService.speak('Sorry, I did not understand that command.')
           }
           break
 
         case 'switch_network':
-          const rawText = (command.parameters?.text || '').toLowerCase()
+          const rawText = (parameterText ?? '').toLowerCase()
           let targetNetwork: 'mainnet' | 'sepolia' = 'sepolia'
           if (rawText.includes('mainnet')) {
             targetNetwork = 'mainnet'
@@ -133,7 +134,7 @@ class CommandService {
           break
         
         case 'transaction_status':
-          await this.handleTransactionStatus(command.parameters?.hash)
+          await this.handleTransactionStatus(this.getParameterString(command.parameters, 'hash'))
           break
         
         default:
@@ -342,7 +343,7 @@ class CommandService {
       
       voiceService.startListening(
         async (confirmCommand) => {
-          const text = confirmCommand.parameters?.text || ''
+          const text = this.getParameterString(confirmCommand.parameters, 'text') || ''
           if (text.includes('confirm') || text.includes('yes')) {
             await this.executeTransfer(transferRequest, wallet.privateKey)
           } else {
@@ -432,8 +433,7 @@ class CommandService {
       const ethBalance = await walletService.getETHBalance(address)
       
       // Fetch token balances
-      const tokens: any[] = []
-      const networkConfig = walletService.getCurrentNetwork()
+      const tokens: TokenBalance[] = []
       // TODO: fetch default token balances based on network configuration
       
       updateBalance({
@@ -449,7 +449,7 @@ class CommandService {
   /**
    * Extract mnemonic from voice command
    */
-  private extractMnemonic(command: VoiceCommand): string | null {
+  private extractMnemonic(): string | null {
     // TODO: parse 12-word mnemonic from speech results
     // Currently returns null; implement parsing when available
     return null
@@ -571,7 +571,7 @@ class CommandService {
       
       voiceService.startListening(
         async (confirmCommand) => {
-          const text = (confirmCommand.parameters?.text || '').toLowerCase()
+          const text = (this.getParameterString(confirmCommand.parameters, 'text') || '').toLowerCase()
         if (text.includes('confirm') || text.includes('yes')) {
             await this.executeTransfer(request, privateKey)
           } else if (text.includes('cancel') || text.includes('no') || text.includes('stop')) {
@@ -1054,7 +1054,7 @@ class CommandService {
    * Cancel transfer flow
    */
   private cancelTransferFlow(reason: string) {
-    voiceService.speak(`Transfer cancelled.：${reason}`)
+    voiceService.speak(`Transfer cancelled: ${reason}`)
     this.resetTransferSteps()
   }
 
@@ -1098,6 +1098,21 @@ class CommandService {
     this.waitForRecipientInput()
   }
 
+  private getParameterString(
+    params: Record<string, unknown> | undefined,
+    key: string
+  ): string | undefined {
+    const value = params?.[key]
+    return typeof value === 'string' ? value : undefined
+  }
+
+  private getParameterBoolean(
+    params: Record<string, unknown> | undefined,
+    key: string
+  ): boolean {
+    const value = params?.[key]
+    return typeof value === 'boolean' ? value : false
+  }
 }
 
 // Singleton instance

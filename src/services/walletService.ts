@@ -7,7 +7,7 @@ import { ethers } from 'ethers'
 import { WalletAccount, TransferRequest, Transaction } from '@/types'
 import { WALLET_CONFIG } from '@/config'
 import { webAuthnService } from './webAuthnService'
-import { WalletRecoveryInfo, BiometricAvailability } from '@/types/webauthn'
+import { BiometricAvailability } from '@/types/webauthn'
 
 // ERC20 ABI (transfer function)
 const ERC20_ABI = [

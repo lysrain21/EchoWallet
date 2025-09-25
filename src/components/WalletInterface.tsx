@@ -6,7 +6,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useWalletStore, useVoiceState } from '@/store'
+import { useVoiceState } from '@/store'
 import { 
   VoiceButton, 
   AccessibleText, 
@@ -15,11 +15,9 @@ import {
   AccessibleButton 
 } from './AccessibilityComponents'
 import { ContactManager } from './ContactManager'
-import { commandService } from '@/services/commandService'
 import { voiceService } from '@/services/voiceService'
 
 export function WalletInterface() {
-  const { wallet, transactions } = useWalletStore()
   const voiceState = useVoiceState()
   const [activeTab, setActiveTab] = useState<'wallet' | 'contacts'>('wallet')
   const [hasPlayedWelcome, setHasPlayedWelcome] = useState(false)
@@ -53,15 +51,6 @@ export function WalletInterface() {
   }, [voiceState.lastCommand, hasPlayedWelcome])
 
   // Voice command descriptions
-  const voiceCommands = [
-    'Create wallet – generate a brand new wallet address',
-    'Import wallet – sign in with biometrics',
-    'Check balance – hear the current ETH balance',
-    'Transfer – start the guided transfer flow',
-    'Show contacts – review saved contacts',
-    'Check transaction – hear transaction status updates'
-  ]
-
   return (
     <div className="min-h-screen bg-gray-50 p-4" role="main">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -103,7 +92,7 @@ export function WalletInterface() {
         {/* Tab content */}
         <div role="tabpanel" aria-labelledby={`tab-${activeTab}`}>
           {activeTab === 'wallet' && (
-            <WalletMainPanel wallet={wallet} voiceState={voiceState} transactions={transactions} />
+            <WalletMainPanel voiceState={voiceState} />
           )}
           
           {activeTab === 'contacts' && (
@@ -116,7 +105,11 @@ export function WalletInterface() {
 }
 
 // Wallet main panel component
-function WalletMainPanel({ wallet, voiceState, transactions }: any) {
+function WalletMainPanel({ voiceState }: { voiceState: ReturnType<typeof useVoiceState> }) {
+  const lastCommandDescription = typeof voiceState.lastCommand?.parameters?.text === 'string'
+    ? voiceState.lastCommand.parameters.text
+    : voiceState.lastCommand?.type ?? null
+
   return (
     <div className="space-y-6">
       {/* Voice control */}
@@ -131,7 +124,7 @@ function WalletMainPanel({ wallet, voiceState, transactions }: any) {
         {voiceState.lastCommand && (
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800">
-              Last command: {voiceState.lastCommand.parameters?.text || 'Unknown'}
+              Last command: {lastCommandDescription ?? 'Unknown'}
             </p>
           </div>
         )}

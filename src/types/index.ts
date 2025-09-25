@@ -1,6 +1,6 @@
 /**
  * Echo Wallet - Type Definitions
- * 为盲人用户设计的Web3钱包类型定义
+ * Shared types for the voice-first Web3 wallet.
  */
 
 // UserOperation type is not exported from @account-abstraction/sdk, so we define it here based on ERC-4337 spec
@@ -18,7 +18,7 @@ export interface UserOperation {
   signature: string
 }
 
-// 钱包相关类型
+// Wallet types
 export interface WalletAccount {
   address: string
   privateKey: string
@@ -40,7 +40,7 @@ export interface TokenBalance {
   name: string
 }
 
-// 交易相关类型
+// Transaction types
 export interface Transaction {
   hash: string
   to: string
@@ -55,14 +55,14 @@ export interface Transaction {
 export interface TransferRequest {
   to: string
   amount: string
-  token?: string // ETH 或代币地址
+  token?: string
   tokenSymbol?: string
 }
 
-// 语音相关类型
+// Voice-related types
 export interface VoiceCommand {
   type: 'create_wallet' | 'transfer' | 'balance' | 'import_wallet' | 'transaction_status' | 'contacts' | 'switch_network' | 'text_input'
-  parameters?: Record<string, any>
+  parameters?: Record<string, unknown>
   confidence: number
 }
 
@@ -73,7 +73,7 @@ export interface VoiceState {
   error?: string
 }
 
-// 应用状态类型
+// Application state types
 export interface AppState {
   wallet: WalletAccount | null
   balance: WalletBalance
@@ -84,7 +84,7 @@ export interface AppState {
   network: 'mainnet' | 'sepolia' | 'polygon'
 }
 
-// ERC-4337 相关类型
+// ERC-4337 related types
 export interface AAWalletConfig {
   bundlerUrl: string
   paymasterUrl: string
@@ -99,7 +99,7 @@ export interface PaymasterResult {
   callGasLimit: string
 }
 
-// 语音识别配置
+// Speech recognition configuration
 export interface SpeechConfig {
   language: 'zh-CN' | 'en-US'
   continuous: boolean
@@ -107,7 +107,7 @@ export interface SpeechConfig {
   maxAlternatives: number
 }
 
-// 可访问性配置
+// Accessibility configuration
 export interface AccessibilityConfig {
   announceActions: boolean
   verboseMode: boolean

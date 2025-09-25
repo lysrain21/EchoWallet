@@ -34,18 +34,21 @@ export function VoiceTestDemo() {
     voiceService.startListening(
       (command) => {
         console.log('🎯 Received command:', command)
-        setLastResult(command.parameters?.text || command.type)
-        
+        const transcript = typeof command.parameters?.text === 'string'
+          ? command.parameters.text
+          : command.type
+        setLastResult(transcript)
+
         // Display the optimized result
-        if (command.parameters?.text) {
+        if (typeof command.parameters?.text === 'string') {
           const optimized = VoiceRecognitionOptimizer.optimizeText(command.parameters.text)
           setOptimizedResult(optimized)
         }
 
         // Record the result for history
-        const result = `${new Date().toLocaleTimeString()}: ${command.type} - ${command.parameters?.text || ''}`
+        const result = `${new Date().toLocaleTimeString()}: ${command.type} - ${typeof command.parameters?.text === 'string' ? command.parameters.text : ''}`
         setTestResults(prev => [result, ...prev.slice(0, 9)])
-        
+
         setIsListening(false)
       },
       (error) => {

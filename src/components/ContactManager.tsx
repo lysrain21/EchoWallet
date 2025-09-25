@@ -43,6 +43,7 @@ export function ContactManager() {
       setIsAddingContact(false)
       loadContacts()
     } catch (error) {
+      console.error('Failed to add contact:', error)
       voiceService.speak('Failed to add contact.')
     }
   }

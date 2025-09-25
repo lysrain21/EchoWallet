@@ -4,12 +4,12 @@
  */
 
 import { create } from "zustand";
-import { AppState, WalletAccount, Transaction, VoiceState } from "@/types";
+import { AppState, WalletAccount, Transaction, VoiceState, WalletBalance } from "@/types";
 
 interface WalletStore extends AppState {
   // Wallet actions
   setWallet: (wallet: WalletAccount | null) => void;
-  updateBalance: (balance: any) => void;
+  updateBalance: (balance: WalletBalance) => void;
   addTransaction: (transaction: Transaction) => void;
   updateTransaction: (hash: string, updates: Partial<Transaction>) => void;
 
@@ -41,7 +41,7 @@ const initialState: AppState = {
   network: "sepolia",
 };
 
-export const useWalletStore = create<WalletStore>((set, get) => ({
+export const useWalletStore = create<WalletStore>((set) => ({
   ...initialState,
 
   // Wallet actions

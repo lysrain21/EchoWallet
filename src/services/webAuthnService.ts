@@ -4,8 +4,6 @@
  */
 
 import {
-  WebAuthnCredentialCreationOptions,
-  WebAuthnCredentialRequestOptions,
   StoredWalletCredential,
   WalletRecoveryInfo,
   WebAuthnError,
@@ -396,8 +394,9 @@ class WebAuthnService {
   }
 
   private async extractPublicKeyFromAttestation(
-    attestationObject: ArrayBuffer
+    _attestationObject?: ArrayBuffer
   ): Promise<Uint8Array> {
+    void _attestationObject
     return new Uint8Array(32).fill(1);
   }
 

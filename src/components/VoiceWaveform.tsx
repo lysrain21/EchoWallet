@@ -1,11 +1,11 @@
 /**
- * Echo Wallet - 语音声波可视化组件
- * 专为盲人用户设计的中心声波动画
- */
+ * Echo Wallet - Voice waveform visualization
+ * Central waveform animation optimised for blind users.
+*/
 
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useVoiceState } from '@/store'
 
 interface VoiceWaveformProps {
@@ -14,10 +14,8 @@ interface VoiceWaveformProps {
 
 export function VoiceWaveform({ className = '' }: VoiceWaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | null>(null)
   const voiceState = useVoiceState()
-  const [audioContext, setAudioContext] = useState<AudioContext | null>(null)
-  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -26,7 +24,7 @@ export function VoiceWaveform({ className = '' }: VoiceWaveformProps) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // 设置画布尺寸
+    // Set canvas dimensions
     const resizeCanvas = () => {
       const rect = canvas.getBoundingClientRect()
       canvas.width = rect.width * window.devicePixelRatio
@@ -37,22 +35,22 @@ export function VoiceWaveform({ className = '' }: VoiceWaveformProps) {
     resizeCanvas()
     window.addEventListener('resize', resizeCanvas)
 
-    // 声波动画
+    // Waveform animation
     const animate = () => {
       const width = canvas.offsetWidth
       const height = canvas.offsetHeight
       const centerX = width / 2
       const centerY = height / 2
 
-      // 清除画布
+      // Clear canvas
       ctx.clearRect(0, 0, width, height)
 
-      // 根据语音状态调整动画
+      // Adjust animation based on voice state
       const isActive = voiceState.isListening || voiceState.isProcessing
       const baseRadius = Math.min(width, height) * 0.15
       const time = Date.now() * 0.002
 
-      // 绘制多层声波圆环
+      // Draw layered waveform rings
       for (let i = 0; i < 5; i++) {
         const offset = i * 0.5
         const radius = baseRadius + Math.sin(time + offset) * (isActive ? 30 : 10)
@@ -61,7 +59,7 @@ export function VoiceWaveform({ className = '' }: VoiceWaveformProps) {
         ctx.beginPath()
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
         
-        // 根据状态设置颜色
+        // Colour based on current state
         if (voiceState.isListening) {
           ctx.strokeStyle = `rgba(76, 175, 80, ${opacity})` // 绿色 - 监听中
         } else if (voiceState.isProcessing) {
@@ -74,7 +72,7 @@ export function VoiceWaveform({ className = '' }: VoiceWaveformProps) {
         ctx.stroke()
       }
 
-      // 中心脉冲点
+      // Central pulse indicator
       const pulseRadius = 8 + Math.sin(time * 2) * (isActive ? 4 : 2)
       ctx.beginPath()
       ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2)
@@ -110,19 +108,19 @@ export function VoiceWaveform({ className = '' }: VoiceWaveformProps) {
         style={{ width: '100%', height: '100%' }}
         aria-label={
           voiceState.isListening 
-            ? '正在监听语音输入' 
+            ? 'Listening for voice input' 
             : voiceState.isProcessing 
-            ? '正在处理语音命令' 
-            : '语音待机状态'
+            ? 'Processing your voice command' 
+            : 'Voice standby'
         }
         role="img"
       />
       
-      {/* 状态文字提示 - 隐藏但可被屏幕阅读器读取 */}
+      {/* Hidden status text for screen readers */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {voiceState.isListening && '语音监听中，请说话'}
-        {voiceState.isProcessing && '正在处理您的语音命令'}
-        {!voiceState.isListening && !voiceState.isProcessing && '语音待机中，按空格键或点击开始'}
+        {voiceState.isListening && 'Listening. Please speak now.'}
+        {voiceState.isProcessing && 'Processing your voice command.'}
+        {!voiceState.isListening && !voiceState.isProcessing && 'Voice standby. Press Space or tap to start.'}
       </div>
     </div>
   )
