@@ -1,6 +1,6 @@
 /**
- * Echo Wallet - 主页
- * 盲人专用Web3钱包
+ * Echo Wallet - Home
+ * Voice-first Web3 wallet for blind users.
  */
 
 import { WalletInterface } from '@/components/WalletInterface'

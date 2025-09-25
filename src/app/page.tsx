@@ -1,6 +1,6 @@
 /**
- * Echo Wallet - 主页面
- * 提供标准界面和极简语音界面的切换
+ * Echo Wallet - Main page
+ * Allows switching between the standard and minimal voice interfaces.
  */
 
 'use client'
@@ -11,7 +11,7 @@ import { MinimalVoiceWallet } from '@/components/MinimalVoiceWallet'
 
 export default function HomePage() {
   const [useMinimalInterface, setUseMinimalInterface] = useState(() => {
-    // 检查用户偏好设置
+    // Load user preference for interface mode
     if (typeof window !== 'undefined') {
       return localStorage.getItem('echo-interface-mode') === 'minimal'
     }
@@ -24,13 +24,13 @@ export default function HomePage() {
     localStorage.setItem('echo-interface-mode', newMode ? 'minimal' : 'standard')
   }
 
-  // 渲染极简语音界面
+  // Render minimal voice interface
   if (useMinimalInterface) {
     return (
       <>
         <MinimalVoiceWallet />
         
-        {/* 界面切换按钮 - 位于角落，不干扰主要交互 */}
+        {/* Toggle button in the corner */}
         <button
           onClick={toggleInterface}
           className="
@@ -40,20 +40,20 @@ export default function HomePage() {
             hover:bg-gray-700/80 transition-colors
             focus:outline-none focus:ring-2 focus:ring-blue-500
           "
-          aria-label="切换到标准界面"
+          aria-label="Switch to standard interface"
         >
-          标准界面
+          Standard interface
         </button>
       </>
     )
   }
 
-  // 渲染标准界面
+  // Render standard interface
   return (
     <>
       <WalletInterface />
       
-      {/* 界面切换按钮 */}
+      {/* Toggle button */}
       <button
         onClick={toggleInterface}
         className="
@@ -62,9 +62,9 @@ export default function HomePage() {
           hover:bg-blue-700 transition-colors
           focus:outline-none focus:ring-2 focus:ring-blue-300
         "
-        aria-label="切换到极简语音界面"
+        aria-label="Switch to minimal voice interface"
       >
-        极简界面
+        Minimal interface
       </button>
     </>
   )

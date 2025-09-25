@@ -1,6 +1,6 @@
 /**
- * Echo Wallet - 语音命令处理服务
- * 协调语音识别和钱包操作
+ * Echo Wallet - Voice command service
+ * Coordinates speech recognition with wallet operations.
  */
 
 import { VoiceCommand, TransferRequest } from '@/types'
@@ -13,7 +13,7 @@ import { VoiceRecognitionOptimizer } from './voiceOptimizer'
 
 class CommandService {
   private isProcessing = false
-  // 分步转账状态管理 - 简化版，移除代币选择步骤
+  // Step-by-step transfer state (simplified, ETH only)
   private transferSteps = {
     isActive: false,
     step: 'idle' as 'idle' | 'recipient' | 'amount' | 'confirm',
@@ -24,34 +24,32 @@ class CommandService {
   }
 
   /**
-   * 开始语音监听
+   * Start voice listening.
    */
   startListening() {
     const { setVoiceState } = useWalletStore.getState()
     
     if (this.isProcessing) {
-      voiceService.speak('系统正在处理中，请稍候')
+      voiceService.speak('The system is processing. Please wait a moment.')
       return
     }
 
     setVoiceState({ isListening: true })
-    voiceService.speak('请说出您的指令')
+    voiceService.speak('Please say your command.')
 
     voiceService.startListening(
       (command) => this.handleCommand(command),
       (error) => {
         setVoiceState({ isListening: false, error })
         
-        // 对于"没有检测到语音"的错误，提供更友好的处理
-        if (error.includes('没有检测到语音')) {
-          // voiceService 已经处理了语音播报，这里只需要重新启动监听
+        // Handle "no speech" errors gracefully by restarting the listener
+        if (error.includes('No speech detected')) {
           setTimeout(() => {
             if (!this.isProcessing) {
               this.startListening()
             }
           }, 2000)
         } else {
-          // 其他错误直接播报
           voiceService.speak(error)
         }
       }
@@ -59,7 +57,7 @@ class CommandService {
   }
 
   /**
-   * 停止语音监听
+   * Stop voice listening.
    */
   stopListening() {
     const { setVoiceState } = useWalletStore.getState()
@@ -68,7 +66,7 @@ class CommandService {
   }
 
   /**
-   * 处理语音命令
+   * Handle recognized voice command.
    */
   private async handleCommand(command: VoiceCommand) {
     const { setVoiceState, setLoading, setError } = useWalletStore.getState()
@@ -78,7 +76,7 @@ class CommandService {
       setVoiceState({ isProcessing: true, lastCommand: command })
       setLoading(true)
 
-      voiceService.speak('正在处理您的请求...')
+      voiceService.speak('Processing your request...')
 
       switch (command.type) {
         case 'create_wallet':
@@ -94,16 +92,16 @@ class CommandService {
           break
         
         case 'transfer':
-          // 检查是否已在转账流程中
+          // Check whether a transfer flow is already active
           if (this.transferSteps.isActive) {
             await this.handleTransferStepInput(command.parameters?.text || '')
           } else {
-            // 检查是否为完整的转账命令
+            // Determine whether the command already includes full transfer details
             if (command.parameters?.isComplete) {
-              // 完整转账命令，使用优化的处理流程
+              // For complete transfer commands, use the optimized flow
               await this.handleCompleteTransferCommand(command.parameters)
             } else {
-              // 简单转账命令（如"转账"），开始分步流程
+              // For partial commands (e.g., just "transfer"), start the guided flow
               await this.startStepByStepTransferFlow()
             }
           }
@@ -114,19 +112,24 @@ class CommandService {
           break
 
         case 'text_input':
-          // 处理转账流程中的文本输入
+          // Handle text input during the transfer flow
           if (this.transferSteps.isActive) {
             await this.handleTransferStepInput(command.parameters?.text || '')
           } else {
-            voiceService.speak('抱歉，我不理解这个命令')
+            voiceService.speak('Sorry, I did not understand that command.')
           }
           break
 
         case 'switch_network':
-          const text = command.parameters?.text || ''
-          const network = text.includes('主网') ? 'mainnet' : 'sepolia'
-          await walletService.switchNetwork(network)
-          voiceService.speak(`已切换到${network === 'mainnet' ? '主网' : '测试网'}`)
+          const rawText = (command.parameters?.text || '').toLowerCase()
+          let targetNetwork: 'mainnet' | 'sepolia' = 'sepolia'
+          if (rawText.includes('mainnet')) {
+            targetNetwork = 'mainnet'
+          } else if (rawText.includes('sepolia') || rawText.includes('testnet')) {
+            targetNetwork = 'sepolia'
+          }
+          await walletService.switchNetwork(targetNetwork)
+          voiceService.speak(`Switched to ${targetNetwork === 'mainnet' ? 'mainnet' : 'testnet'}`)
           break
         
         case 'transaction_status':
@@ -134,13 +137,13 @@ class CommandService {
           break
         
         default:
-          voiceService.speak('抱歉，我不理解这个命令')
+          voiceService.speak('Sorry, I did not understand that command.')
       }
 
     } catch (error) {
-      console.error('命令处理失败:', error)
-      setError(error instanceof Error ? error.message : '未知错误')
-      voiceService.speak(`操作失败：${error instanceof Error ? error.message : '未知错误'}`)
+      console.error('Command processing failed:', error)
+      setError(error instanceof Error ? error.message : 'Unknown error')
+      voiceService.speak(`Operation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       this.isProcessing = false
       setVoiceState({ isProcessing: false, isListening: false })
@@ -149,34 +152,34 @@ class CommandService {
   }
 
   /**
-   * 处理创建钱包命令
+   * Handle create wallet command
    */
   private async handleCreateWallet() {
     const { setWallet } = useWalletStore.getState()
     
     try {
-      console.log('🎤 用户请求创建钱包')
+      console.log('🎤 User requested wallet creation')
       
-      // 首先检查生物识别可用性并告知用户
+      // Check biometric availability and inform the user
       const biometricAvailability = await walletService.checkBiometricAvailability()
       
       if (biometricAvailability.isSupported && biometricAvailability.isAvailable) {
-        voiceService.speak('检测到生物识别功能，将在创建钱包后自动保存到您的设备')
+        voiceService.speak('Biometric support detected. The wallet will be saved to your device after creation.')
       }
       
-      // 使用增强的钱包创建方法
+      // Use the enhanced wallet creation method
       const wallet = await walletService.createAndVerifyWallet()
       setWallet(wallet)
       
-      console.log('💾 钱包已保存到状态管理')
+      console.log('💾 Wallet saved to state management')
       
       if (wallet.mnemonic) {
-        voiceService.speak('钱包创建成功。助记词已生成并显示在界面上，请妥善保存。')
+        voiceService.speak('Wallet created successfully. The recovery phrase is displayed; please store it safely.')
         
-        // 检查是否成功保存到生物识别
+        // If biometrics are available, confirm saving
         if (biometricAvailability.isSupported && biometricAvailability.isAvailable) {
           setTimeout(() => {
-            voiceService.speak('钱包已通过生物识别安全保存到您的设备。下次访问时，您可以说"导入钱包"并使用生物识别快速恢复。')
+            voiceService.speak('The wallet has been securely saved via biometrics on your device. Next time, say "import wallet" and use biometrics to restore quickly.')
           }, 3000)
         }
         
@@ -185,58 +188,58 @@ class CommandService {
             address: walletService.formatAddressForSpeech(wallet.address)
           })
           
-          // 播报验证信息
-          voiceService.speak('钱包验证完成，所有信息正确。请在浏览器控制台查看详细信息。')
+          // Announce verification details
+          voiceService.speak('Wallet verification completed. All information is correct. Check the browser console for details.')
         }, 2000)
       }
       
-      // 同时更新余额
+      // Update the balance as well
       await this.updateBalance(wallet.address)
       
     } catch (error) {
-      console.error('❌ 钱包创建失败:', error)
+      console.error('❌ Wallet creation failed:', error)
       throw error
     }
   }
 
   /**
-   * 处理导入钱包命令 - 仅使用生物识别
+   * Handle import wallet command (biometrics only)
    */
   private async handleImportWallet() {
     const { setWallet } = useWalletStore.getState()
     
     try {
-      // 检查生物识别可用性
+      // Check biometric availability
       const biometricAvailability = await walletService.checkBiometricAvailability()
       
       if (!biometricAvailability.isSupported || !biometricAvailability.isAvailable) {
-        voiceService.speak('您的设备不支持生物识别功能，无法导入钱包。请先在支持生物识别的设备上创建钱包。')
+        voiceService.speak('Your device does not support biometrics, so the wallet cannot be imported. Please create the wallet on a device that supports biometrics first.')
         return
       }
       
-      // 检查是否有已保存的钱包
+      // Ensure a saved wallet exists
       const recoveryState = await walletService.getWalletRecoveryState()
       
       if (!recoveryState.hasStoredCredentials) {
-        voiceService.speak('未找到已保存的钱包。请先创建钱包，系统会自动保存到您的设备。')
+        voiceService.speak('No saved wallet found. Please create a wallet first so it can be saved to your device.')
         return
       }
       
-      // 开始生物识别恢复
-      console.log('🔐 开始生物识别钱包恢复...')
-      voiceService.speak('请使用生物识别验证您的身份以恢复钱包')
+      // Begin biometric recovery
+      console.log('🔐 Starting biometric wallet recovery...')
+      voiceService.speak('Please use biometrics to verify your identity and restore the wallet.')
       
       const recoveryResult = await walletService.recoverWalletWithBiometric()
       
       if (recoveryResult.success && recoveryResult.wallets && recoveryResult.wallets.length > 0) {
-        // 生物识别恢复成功
-        const wallet = recoveryResult.wallets[0] // 使用第一个钱包
+        // Biometric recovery succeeded
+        const wallet = recoveryResult.wallets[0] // Use the first recovered wallet
         setWallet(wallet)
         
-        voiceService.speak('生物识别验证成功，钱包已恢复')
-        console.log('✅ 通过生物识别成功恢复钱包:', wallet.address)
+        voiceService.speak('Biometric verification succeeded. Wallet restored.')
+        console.log('✅ Wallet restored via biometrics:', wallet.address)
         
-        // 更新余额
+        // Refresh the balance
         await this.updateBalance(wallet.address)
         
         setTimeout(() => {
@@ -246,26 +249,26 @@ class CommandService {
         }, 2000)
         
       } else {
-        // 生物识别恢复失败
-        const errorMessage = recoveryResult.error || '生物识别验证失败'
-        voiceService.speak(`钱包恢复失败：${errorMessage}`)
-        console.error('❌ 生物识别钱包恢复失败:', recoveryResult.error)
+        // Biometric recovery failed
+        const errorMessage = recoveryResult.error || 'Biometric verification failed'
+        voiceService.speak(`Wallet recovery failed: ${errorMessage}`)
+        console.error('❌ Biometric wallet recovery failed:', recoveryResult.error)
       }
       
     } catch (error) {
-      console.error('❌ 导入钱包失败:', error)
-      voiceService.speak('钱包导入过程中出现错误，请重试')
+      console.error('❌ Wallet import failed:', error)
+      voiceService.speak('An error occurred while importing the wallet. Please try again.')
     }
   }
 
   /**
-   * 处理查询余额命令
+   * Handle check balance command
    */
   private async handleCheckBalance() {
     const { wallet } = useWalletStore.getState()
     
     if (!wallet) {
-      voiceService.speak('请先创建或导入钱包')
+      voiceService.speak('Please create or import a wallet first.')
       return
     }
 
@@ -273,13 +276,13 @@ class CommandService {
     
     const { balance } = useWalletStore.getState()
     
-    // 播报ETH余额
+    // Announce ETH balance
     voiceService.speakTemplate('BALANCE_RESULT', {
       token: 'ETH',
       amount: parseFloat(balance.eth).toFixed(4)
     })
     
-    // 播报代币余额
+    // Announce token balances
     if (balance.tokens.length > 0) {
       setTimeout(() => {
         balance.tokens.forEach((token, index) => {
@@ -295,24 +298,24 @@ class CommandService {
   }
 
   /**
-   * 处理转账命令
+   * Handle transfer command
    */
   private async handleTransfer(params: any) {
     const { wallet } = useWalletStore.getState()
     
     if (!wallet) {
-      voiceService.speak('请先创建或导入钱包')
+      voiceService.speak('Please create or import a wallet first.')
       return
     }
 
     if (!params || !params.amount || !params.to) {
-      voiceService.speak('转账信息不完整，请重新说明金额和收款地址')
+      voiceService.speak('Transfer information is incomplete. Please restate the amount and recipient address.')
       return
     }
 
-    // 验证地址格式
+    // Validate address format
     if (!walletService.isValidAddress(params.to)) {
-      voiceService.speak('收款地址格式错误，请检查')
+      voiceService.speak('The recipient address format is invalid. Please check it.')
       return
     }
 
@@ -323,7 +326,7 @@ class CommandService {
       tokenSymbol: params.token
     }
 
-    // 语音确认
+    // Voice confirmation
     const tokenName = params.token || 'ETH'
     const addressForSpeech = walletService.formatAddressForSpeech(params.to)
     
@@ -333,40 +336,40 @@ class CommandService {
       to: addressForSpeech
     })
 
-    // 等待用户确认
+    // Await user confirmation
     setTimeout(() => {
-      voiceService.speak('请说"确认"来完成转账，或说"取消"来取消操作')
+      voiceService.speak('Please say "confirm" to complete the transfer or "cancel" to abort.')
       
       voiceService.startListening(
         async (confirmCommand) => {
           const text = confirmCommand.parameters?.text || ''
-          if (text.includes('确认') || text.includes('confirm')) {
+          if (text.includes('confirm') || text.includes('yes')) {
             await this.executeTransfer(transferRequest, wallet.privateKey)
           } else {
-            voiceService.speak('转账已取消')
+            voiceService.speak('Transfer cancelled.')
           }
         },
-        () => voiceService.speak('确认失败，转账已取消')
+        () => voiceService.speak('Confirmation failed. Transfer cancelled.')
       )
     }, 3000)
   }
 
   /**
-   * 执行转账 - 简化版，只支持ETH
+   * Execute transfer (ETH only)
    */
   private async executeTransfer(request: TransferRequest, privateKey: string) {
     const { addTransaction } = useWalletStore.getState()
     
-    console.log('🔄 开始执行ETH转账')
-    console.log('📋 转账请求详情:', request)
+    console.log('🔄 Starting ETH transfer')
+    console.log('📋 Transfer request details:', request)
     
     try {
-      // 只处理ETH转账
-      console.log('🌐 调用 walletService.transferETH...')
+      // Handle ETH transfers only
+      console.log('🌐 Calling walletService.transferETH...')
       const txHash = await walletService.transferETH(request, privateKey)
-      console.log('✅ 转账成功，交易哈希:', txHash)
+      console.log('✅ Transfer succeeded, transaction hash:', txHash)
 
-      // 添加交易记录
+      // Record the transaction
       const transaction = {
         hash: txHash,
         to: request.to,
@@ -376,51 +379,51 @@ class CommandService {
       }
       
       addTransaction(transaction)
-      console.log('📝 交易记录已添加到状态管理')
+      console.log('📝 Transaction recorded in state management')
       
       voiceService.speakTemplate('TRANSFER_SUCCESS', { hash: txHash })
       
-      // 更新余额
+      // Refresh the balance
       setTimeout(() => {
         const { wallet } = useWalletStore.getState()
         if (wallet) {
-          console.log('🔄 5秒后更新余额...')
+          console.log('🔄 Updating balance again in 5 seconds...')
           this.updateBalance(wallet.address)
         }
       }, 5000)
       
     } catch (error) {
-      console.error('❌ 转账执行失败:', error)
-      const errorMessage = error instanceof Error ? error.message : '未知错误'
+      console.error('❌ Transfer execution failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       voiceService.speakTemplate('TRANSFER_FAILED', { error: errorMessage })
-      throw error // 重新抛出错误，让上层处理
+      throw error // Rethrow the error so callers can handle it
     }
   }
 
   /**
-   * 处理交易状态查询
+   * Handle transaction status query
    */
   private async handleTransactionStatus(hash?: string) {
     if (!hash) {
-      voiceService.speak('请提供交易哈希地址')
+      voiceService.speak('Please provide the transaction hash.')
       return
     }
 
     const transaction = await walletService.getTransactionStatus(hash)
     
     if (!transaction) {
-      voiceService.speak('未找到该交易')
+      voiceService.speak('Transaction not found')
       return
     }
 
-    const statusText = transaction.status === 'confirmed' ? '已确认' : 
-                      transaction.status === 'failed' ? '失败' : '待确认'
+    const statusText = transaction.status === 'confirmed' ? 'confirmed' : 
+                      transaction.status === 'failed' ? 'failed' : 'pending confirmation'
     
-    voiceService.speak(`交易状态：${statusText}，金额：${transaction.value} ETH`)
+    voiceService.speak(`Transaction status: ${statusText}, amount: ${transaction.value} ETH`)
   }
 
   /**
-   * 更新钱包余额
+   * Update wallet balance
    */
   private async updateBalance(address: string) {
     const { updateBalance } = useWalletStore.getState()
@@ -428,10 +431,10 @@ class CommandService {
     try {
       const ethBalance = await walletService.getETHBalance(address)
       
-      // 获取代币余额
+      // Fetch token balances
       const tokens: any[] = []
       const networkConfig = walletService.getCurrentNetwork()
-      // 这里可以根据网络配置获取默认代币余额
+      // TODO: fetch default token balances based on network configuration
       
       updateBalance({
         eth: ethBalance,
@@ -439,30 +442,30 @@ class CommandService {
       })
       
     } catch (error) {
-      console.error('更新余额失败:', error)
+      console.error('Failed to update balance:', error)
     }
   }
 
   /**
-   * 从语音命令中提取助记词
+   * Extract mnemonic from voice command
    */
   private extractMnemonic(command: VoiceCommand): string | null {
-    // 这里需要实现从语音识别结果中提取12个助记词的逻辑
-    // 暂时返回null，实际实现需要根据语音识别结果解析
+    // TODO: parse 12-word mnemonic from speech results
+    // Currently returns null; implement parsing when available
     return null
   }
 
   /**
-   * 解析转账命令 - 使用优化解析器
+   * Parse transfer command using optimizer
    */
   private parseTransferCommand(text: string) {
-    console.log('🔍 开始解析转账命令:', text)
+    console.log('🔍 Starting transfer command parsing:', text)
     
-    // 使用优化的解析器
+    // Use optimized parser
     const result = VoiceRecognitionOptimizer.parseTransferCommand(text)
     
     if (result) {
-      // 验证金额格式
+      // Validate amount format
       const amountValidation = VoiceRecognitionOptimizer.validateAmount(result.amount)
       
       if (!amountValidation.isValid) {
@@ -470,42 +473,42 @@ class CommandService {
         return null
       }
       
-      // 更新为修正后的金额
+      // Store corrected amount
       result.amount = amountValidation.corrected
       
-      console.log('✅ 转账命令解析成功:', result)
+      console.log('✅ Transfer command parsed successfully:', result)
       return result
     }
     
-    console.log('❌ 转账命令解析失败')
+    console.log('❌ Failed to parse transfer command')
     return null
   }
 
   /**
-   * 处理转账命令 - 优化版
+   * Handle transfer command (optimized)
    */
   private async handleTransferOptimized(params: any) {
     const { wallet } = useWalletStore.getState()
     
     if (!wallet) {
-      voiceService.speak('请先创建或导入钱包')
+      voiceService.speak('Please create or import a wallet first.')
       return
     }
 
     if (!params || !params.amount) {
-      voiceService.speak('请说明转账金额')
+      voiceService.speak('Please specify the transfer amount.')
       return
     }
 
     let targetAddress: string | undefined
     let contactName: string | undefined
 
-    // 根据不同类型处理
+    // Handle according to recipient type
     switch (params.type) {
       case 'contact':
         const contact = contactsService.findContact(params.contactName)
         if (!contact) {
-          voiceService.speak(`未找到联系人 ${params.contactName}，请在网页界面添加此联系人`)
+        voiceService.speak(`No contact found for ${params.contactName}. Please add this contact on the web interface.`)
           return
         }
         targetAddress = contact.address
@@ -516,7 +519,7 @@ class CommandService {
       case 'quick':
         const recentContacts = contactsService.getFrequentContacts(1)
         if (recentContacts.length === 0) {
-          voiceService.speak('没有最近使用的联系人，请在网页界面添加联系人')
+          voiceService.speak('No recently used contacts. Please add contacts on the web interface.')
           return
         }
         targetAddress = recentContacts[0].address
@@ -526,18 +529,18 @@ class CommandService {
 
       case 'address':
         if (!walletService.isValidAddress(params.to)) {
-          voiceService.speak('收款地址格式错误，请检查')
+          voiceService.speak('The recipient address format is invalid. Please check it.')
           return
         }
         targetAddress = params.to
         break
 
       default:
-        voiceService.speak('转账信息不完整，请重新说明')
+        voiceService.speak('Transfer information is incomplete. Please restate it.')
         return
     }
 
-    // 构建转账请求
+    // Build transfer request
     const transferRequest: TransferRequest = {
       to: targetAddress!,
       amount: params.amount,
@@ -545,7 +548,7 @@ class CommandService {
       tokenSymbol: params.token
     }
 
-    // 语音确认 - 使用联系人名称或简化地址
+    // Voice confirmation with contact name or shortened address
     const tokenName = params.token || 'ETH'
     const recipientInfo = contactName || walletService.formatAddressForSpeech(targetAddress!)
     
@@ -555,102 +558,102 @@ class CommandService {
       to: recipientInfo
     })
 
-    // 等待用户确认
+    // Await user confirmation
     this.waitForTransferConfirmation(transferRequest, wallet.privateKey)
   }
 
   /**
-   * 等待转账确认
+   * Wait for transfer confirmation
    */
   private waitForTransferConfirmation(request: TransferRequest, privateKey: string) {
     setTimeout(() => {
-      voiceService.speak('请说"确认"来完成转账，或说"取消"来取消操作')
+      voiceService.speak('Please say "confirm" to complete the transfer or "cancel" to abort.')
       
       voiceService.startListening(
         async (confirmCommand) => {
-          const text = confirmCommand.parameters?.text || ''
-          if (text.includes('确认') || text.includes('confirm') || text.includes('是的')) {
+          const text = (confirmCommand.parameters?.text || '').toLowerCase()
+        if (text.includes('confirm') || text.includes('yes')) {
             await this.executeTransfer(request, privateKey)
-          } else if (text.includes('取消') || text.includes('不') || text.includes('cancel')) {
-            voiceService.speak('转账已取消')
+          } else if (text.includes('cancel') || text.includes('no') || text.includes('stop')) {
+            voiceService.speak('Transfer cancelled.')
           } else {
-            voiceService.speak('请说"确认"或"取消"')
-            this.waitForTransferConfirmation(request, privateKey) // 重新等待
+            voiceService.speak('Please say "confirm" or "cancel".')
+            this.waitForTransferConfirmation(request, privateKey) // Retry waiting
           }
         },
         () => {
-          voiceService.speak('确认失败，转账已取消')
+          voiceService.speak('Confirmation failed. Transfer cancelled.')
         }
       )
     }, 3000)
   }
 
   /**
-   * 处理联系人相关命令
+   * Handle contact-related voice commands.
    */
   private async handleContactCommand(command: string) {
-    console.log('🔍 处理联系人命令:', command)
+    console.log('🔍 Handling contacts command:', command)
     
-    if (command.includes('显示联系人') || command.includes('查看联系人') || 
-        command.includes('联系人列表') || command.includes('联系人')) {
+    if (command.includes('show contacts') || command.includes('view contacts') || 
+        command.includes('contacts list') || command.includes('contact list')) {
       const contacts = contactsService.getContacts()
       
-      console.log('📞 当前联系人数量:', contacts.length)
+      console.log('📞 Current contact count:', contacts.length)
       
       if (contacts.length === 0) {
-        voiceService.speak('暂无保存的联系人，请在网页界面添加联系人')
+        voiceService.speak('No contacts saved. Please add a contact on the web interface.')
         return
       }
 
-      voiceService.speak(`您有 ${contacts.length} 个联系人，开始播报`)
+      voiceService.speak(`You have ${contacts.length} contacts. Announcing them now.`)
       
-      // 逐个播报联系人
+      // Announce up to the first five contacts
       contacts.slice(0, 5).forEach((contact, index) => {
         setTimeout(() => {
-          const announcement = `${index + 1}. ${contact.name}，地址结尾${contact.address.slice(-6)}`
+          const announcement = `${index + 1}. ${contact.name}, address ending ${contact.address.slice(-6)}`
           voiceService.speak(announcement)
-          console.log(`📢 播报联系人 ${index + 1}:`, announcement)
+          console.log(`📢 Announcing contact ${index + 1}:`, announcement)
         }, (index + 1) * 2000)
       })
 
-      // 如果联系人超过5个，提示还有更多
+      // Mention remaining contacts if more than five
       if (contacts.length > 5) {
         setTimeout(() => {
-          voiceService.speak(`还有 ${contacts.length - 5} 个联系人，共 ${contacts.length} 个`)
+          voiceService.speak(`There are ${contacts.length - 5} more contacts, ${contacts.length} in total.`)
         }, 6 * 2000)
       }
     }
     
-    if (command.includes('常用联系人')) {
+    if (command.includes('frequent contacts')) {
       const frequent = contactsService.getFrequentContacts()
       
-      console.log('⭐ 常用联系人数量:', frequent.length)
+      console.log('⭐ Frequent contacts count:', frequent.length)
       
       if (frequent.length === 0) {
-        voiceService.speak('暂无常用联系人，常用联系人根据使用次数自动生成')
+        voiceService.speak('No frequent contacts yet. Frequent contacts are generated automatically based on usage.')
         return
       }
 
-      voiceService.speak('常用联系人列表:')
+      voiceService.speak('Frequent contacts list:')
       frequent.forEach((contact, index) => {
         setTimeout(() => {
-          const announcement = `${contact.name}，使用了 ${contact.usageCount} 次`
+          const announcement = `${contact.name}, used ${contact.usageCount} times`
           voiceService.speak(announcement)
-          console.log(`📢 播报常用联系人:`, announcement)
+          console.log('📢 Announcing frequent contact:', announcement)
         }, (index + 1) * 2000)
       })
     }
   }
 
   /**
-   * 获取语音服务状态
+   * Get voice service state
    */
   getVoiceState() {
     return voiceService.getState()
   }
 
   /**
-   * 检查是否为完整的转账命令
+   * Check if the transfer command is complete
    */
   private isCompleteTransferCommand(params: any): boolean {
     if (!params || !params.text) return false
@@ -660,19 +663,19 @@ class CommandService {
   }
 
   /**
-   * 处理完整的转账命令
+   * Handle a complete transfer command
    */
   private async handleCompleteTransferCommand(params: any) {
     const optimized = VoiceRecognitionOptimizer.parseTransferCommand(params.text)
     
     if (!optimized || !optimized.contactName || !optimized.amount) {
-      // 如果无法解析完整信息，转为分步流程
-      voiceService.speak('转账信息不完整，开始分步转账流程。请说出联系人姓名')
+      // If parsing fails, fall back to the guided flow
+      voiceService.speak('Transfer information is incomplete. Starting the guided transfer flow. Please say the contact name.')
       await this.startStepByStepTransferFlow()
       return
     }
 
-    // 处理收款人
+    // Handle recipient
     if (optimized.type === 'contact' && optimized.contactName) {
       const contact = contactsService.findContact(optimized.contactName)
       if (contact) {
@@ -689,33 +692,33 @@ class CommandService {
           maxAttempts: 3
         }
         
-        voiceService.speak(`确认转账信息：转账 ${optimized.amount} ETH 给 ${contact.name}`)
+        voiceService.speak(`Confirm transfer details: send ${optimized.amount} ETH to ${contact.name}.`)
         this.waitForConfirmation()
         return
       } else {
-        // 明确处理联系人未找到的情况
-        voiceService.speak(`未找到联系人"${optimized.contactName}"，请在网页界面添加此联系人，然后重试转账`)
-        this.cancelTransferFlow('联系人不存在')
+        // Handle missing contacts explicitly
+        voiceService.speak(`No contact found for "${optimized.contactName}". Please add this contact on the web interface and try again.`)
+        this.cancelTransferFlow('Contact does not exist')
         return
       }
     }
 
-    // 如果找不到联系人或其他问题，回到步骤引导
-    voiceService.speak('无法识别联系人信息，开始分步转账流程。请说出联系人姓名')
+    // Return to the guided flow when no contact is found
+    voiceService.speak('Could not identify the contact. Starting the step-by-step transfer flow. Please say the contact name.')
     await this.startStepByStepTransferFlow()
   }
 
   /**
-   * 等待收款人输入
+   * Wait for recipient input
    */
   private waitForRecipientInput() {
     setTimeout(() => {
       voiceService.startListeningForText(
         (text) => this.handleTransferStepInput(text),
         (error) => {
-          // 对于"没有检测到语音"的错误，不计入尝试次数，并给出更友好的提示
-          if (error.includes('没有检测到语音')) {
-            // voiceService 已经处理了语音播报
+          // Ignore "no speech" errors and prompt again gently
+          if (error.includes('No speech detected')) {
+            // voiceService already handled the spoken feedback
             setTimeout(() => {
               if (this.transferSteps.isActive && this.transferSteps.step === 'recipient') {
                 this.waitForRecipientInput()
@@ -726,10 +729,10 @@ class CommandService {
           
           this.transferSteps.attempts++
           if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-            this.cancelTransferFlow('语音识别失败次数过多')
+            this.cancelTransferFlow('Too many speech recognition failures')
           } else {
-            const friendlyMessage = error.includes('语音识别失败') ? 
-              '语音识别失败，请重新清晰地说明转账给谁' : error
+            const friendlyMessage = error.includes('Speech recognition failed') ? 
+              'Speech recognition failed. Please clearly repeat who to transfer to.' : error
             voiceService.speak(friendlyMessage)
             this.waitForRecipientInput()
           }
@@ -739,14 +742,14 @@ class CommandService {
   }
 
   /**
-   * 处理转账步骤输入
+   * Handle transfer step input
    */
   private async handleTransferStepInput(input: string) {
     if (!this.transferSteps.isActive) return
 
-    // 处理取消命令
-    if (input.includes('取消') || input.includes('退出') || input.includes('cancel')) {
-      this.cancelTransferFlow('用户取消')
+    // Handle cancel commands
+    if (input.includes('cancel') || input.includes('exit')) {
+      this.cancelTransferFlow('User cancelled')
       return
     }
 
@@ -764,23 +767,23 @@ class CommandService {
   }
 
   /**
-   * 处理收款人输入
+   * Handle recipient input
    */
   private async handleRecipientInput(input: string) {
-    // 优化输入文本
+    // Normalize the raw input
     const optimizedInput = VoiceRecognitionOptimizer.optimizeText(input)
     
-    // 提取联系人姓名 - 简化版，直接使用输入作为联系人名
+    // Simplified contact name extraction
     let contactName = input.trim()
     
-    // 如果输入包含"给"字，提取联系人姓名
-    const contactMatch = optimizedInput.match(/给\s*([^0-9\s]+)/i) || 
-                        optimizedInput.match(/([^0-9\s]+)/i)
+    // If the input contains "to" or "for", extract the contact name after it
+    const contactMatch = optimizedInput.match(/(?:to|for)\s*([a-z][a-z\s]+)/i) ||
+                        optimizedInput.match(/([a-z][a-z\s]+)/i)
     if (contactMatch) {
       contactName = contactMatch[1].trim()
     }
     
-    // 尝试查找联系人
+    // Attempt to find the contact
     const contact = contactsService.findContact(contactName)
     
     if (contact) {
@@ -789,13 +792,13 @@ class CommandService {
         value: contact.address,
         displayName: contact.name
       }
-      voiceService.speak(`收款人：${contact.name}。现在请说明转账金额`)
+      voiceService.speak(`Recipient: ${contact.name}. Please specify the transfer amount now.`)
       this.transferSteps.step = 'amount'
       this.waitForAmountInput()
       return
     }
 
-    // 检查是否为钱包地址
+    // Check whether the input is a wallet address
     const addressMatch = input.match(/(0x[a-fA-F0-9]{40})/)
     if (addressMatch && walletService.isValidAddress(addressMatch[1])) {
       this.transferSteps.recipient = {
@@ -803,34 +806,34 @@ class CommandService {
         value: addressMatch[1]
       }
       const shortAddress = `${addressMatch[1].slice(0, 6)}...${addressMatch[1].slice(-4)}`
-      voiceService.speak(`收款地址：${shortAddress}。现在请说明转账金额`)
+      voiceService.speak(`Recipient address: ${shortAddress}. Please specify the transfer amount now.`)
       this.transferSteps.step = 'amount'
       this.waitForAmountInput()
       return
     }
 
-    // 未找到匹配项
+    // No match found
     this.transferSteps.attempts++
     if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-      this.cancelTransferFlow('无法识别收款人信息')
+      this.cancelTransferFlow('Could not recognize the recipient information.')
       return
     }
 
-    voiceService.speak(`未找到联系人"${contactName}"，请在网页界面添加此联系人，或重新说出联系人姓名`)
+    voiceService.speak(`No contact found for "${contactName}". Please add the contact on the web interface or say the contact name again.`)
     this.waitForRecipientInput()
   }
 
   /**
-   * 等待金额输入
+   * Wait for amount input
    */
   private waitForAmountInput() {
     setTimeout(() => {
       voiceService.startListeningForText(
         (text) => this.handleTransferStepInput(text),
         (error) => {
-          // 对于"没有检测到语音"的错误，不计入尝试次数，并给出更友好的提示
-          if (error.includes('没有检测到语音')) {
-            // voiceService 已经处理了语音播报
+          // Ignore "no speech" errors and prompt again gently
+          if (error.includes('No speech detected')) {
+            // voiceService already handled the spoken feedback
             setTimeout(() => {
               if (this.transferSteps.isActive && this.transferSteps.step === 'amount') {
                 this.waitForAmountInput()
@@ -841,10 +844,10 @@ class CommandService {
           
           this.transferSteps.attempts++
           if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-            this.cancelTransferFlow('语音识别失败次数过多')
+            this.cancelTransferFlow('Too many speech recognition failures')
           } else {
-            const friendlyMessage = error.includes('语音识别失败') ? 
-              '语音识别失败，请重新清晰地说明转账金额' : error
+            const friendlyMessage = error.includes('Speech recognition failed') ? 
+              'Speech recognition failed. Please clearly repeat the transfer amount.' : error
             voiceService.speak(friendlyMessage)
             this.waitForAmountInput()
           }
@@ -854,35 +857,35 @@ class CommandService {
   }
 
   /**
-   * 处理金额输入
+   * Handle amount input
    */
   private async handleAmountInput(input: string) {
-    // 使用优化器处理金额输入
+    // Normalize the amount input
     const optimizedInput = VoiceRecognitionOptimizer.optimizeText(input)
     
-    // 提取金额 - 简化版，不再提取代币类型
+    // Extract numeric amount only
     const amountMatch = optimizedInput.match(/([0-9.]+)/i)
     
     if (!amountMatch) {
       this.transferSteps.attempts++
       if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-        this.cancelTransferFlow('无法识别金额信息')
+        this.cancelTransferFlow('Could not identify the amount.')
         return
       }
       
-      voiceService.speak('无法识别金额，请说明数字金额，例如：0.1 或 五十')
+      voiceService.speak('Could not understand the amount. Please state a numeric value such as 0.1 or fifty.')
       this.waitForAmountInput()
       return
     }
 
     const amount = amountMatch[1]
 
-    // 验证金额
+    // Validate the amount
     const validation = VoiceRecognitionOptimizer.validateAmount(amount)
     if (!validation.isValid) {
       this.transferSteps.attempts++
       if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-        this.cancelTransferFlow('金额格式错误')
+        this.cancelTransferFlow('Invalid amount format.')
         return
       }
       
@@ -893,37 +896,37 @@ class CommandService {
 
     this.transferSteps.amount = validation.corrected
     
-    // 直接进入确认步骤，固定使用ETH
+    // Proceed directly to confirmation using ETH
     this.transferSteps.step = 'confirm'
-    voiceService.speak(`转账金额：${validation.corrected} ETH`)
+    voiceService.speak(`Transfer amount: ${validation.corrected} ETH`)
     this.showTransferSummary()
   }
 
   /**
-   * 显示转账摘要并等待确认
+   * Present transfer summary and await confirmation
    */
   private showTransferSummary() {
     const recipientInfo = this.transferSteps.recipient!.displayName || 
-                         `地址 ${this.transferSteps.recipient!.value.slice(0, 6)}...${this.transferSteps.recipient!.value.slice(-4)}`
+                         `address ${this.transferSteps.recipient!.value.slice(0, 6)}...${this.transferSteps.recipient!.value.slice(-4)}`
     
-    const summary = `请确认转账信息：转账 ${this.transferSteps.amount} ETH 给 ${recipientInfo}。请说"确认"执行转账，或说"取消"退出`
+    const summary = `Please confirm the transfer: send ${this.transferSteps.amount} ETH to ${recipientInfo}. Say "confirm" to execute the transfer or "cancel" to exit.`
     
     voiceService.speak(summary)
     this.waitForConfirmation()
   }
 
   /**
-   * 等待最终确认
+   * Wait for final confirmation
    */
   private waitForConfirmation() {
-    console.log('⏳ 等待用户最终确认...')
-    console.log('🔍 当前转账状态:', this.transferSteps)
+    console.log('⏳ Waiting for final confirmation...')
+    console.log('🔍 Current transfer state:', this.transferSteps)
     
     setTimeout(() => {
       voiceService.startListeningForText(
         (text) => {
-          console.log('🎤 收到确认步骤的语音输入:', text)
-          console.log('📊 当前流程状态:', {
+          console.log('🎤 Received speech input during confirmation step:', text)
+          console.log('📊 Current flow state:', {
             isActive: this.transferSteps.isActive,
             step: this.transferSteps.step,
             recipient: this.transferSteps.recipient?.displayName || this.transferSteps.recipient?.value,
@@ -932,13 +935,13 @@ class CommandService {
           this.handleTransferStepInput(text)
         },
         (error) => {
-          console.log('❌ 确认步骤语音识别错误:', error)
-          // 对于"没有检测到语音"的错误，不计入尝试次数，并给出更友好的提示
-          if (error.includes('没有检测到语音')) {
-            // voiceService 已经处理了语音播报
+          console.log('❌ Speech recognition error during confirmation step:', error)
+          // Ignore "no speech" errors and prompt again gently
+          if (error.includes('No speech detected')) {
+            // voiceService already handled the spoken feedback
             setTimeout(() => {
               if (this.transferSteps.isActive && this.transferSteps.step === 'confirm') {
-                voiceService.speak('请说"确认"执行转账，或说"取消"退出')
+                voiceService.speak('Please say "confirm" to execute the transfer or "cancel" to exit.')
                 this.waitForConfirmation()
               }
             }, 2000)
@@ -947,10 +950,10 @@ class CommandService {
           
           this.transferSteps.attempts++
           if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-            this.cancelTransferFlow('语音识别失败次数过多')
+            this.cancelTransferFlow('Too many speech recognition failures')
           } else {
-            const friendlyMessage = error.includes('语音识别失败') ? 
-              '语音识别失败，请重新说"确认"或"取消"' : error
+            const friendlyMessage = error.includes('Speech recognition failed') ? 
+              'Speech recognition failed. Please say "confirm" or "cancel" again.' : error
             voiceService.speak(friendlyMessage)
             this.waitForConfirmation()
           }
@@ -960,11 +963,11 @@ class CommandService {
   }
 
   /**
-   * 处理最终确认输入
+   * Handle final confirmation input
    */
   private async handleConfirmationInput(input: string) {
-    console.log('🔍 处理确认输入:', input)
-    console.log('📊 确认时的转账状态:', {
+    console.log('🔍 Handling confirmation input:', input)
+    console.log('📊 Transfer state at confirmation:', {
       isActive: this.transferSteps.isActive,
       step: this.transferSteps.step,
       recipient: this.transferSteps.recipient,
@@ -972,91 +975,91 @@ class CommandService {
       attempts: this.transferSteps.attempts
     })
     
-    if (input.includes('确认') || input.includes('是的') || input.includes('confirm') || input.includes('ok')) {
-      console.log('✅ 用户确认转账，开始执行...')
+    if (input.includes('confirm') || input.includes('yes') || input.includes('ok')) {
+      console.log('✅ User confirmed the transfer. Executing...')
       try {
         await this.executeStepTransfer()
-        console.log('🎉 转账执行完成')
+        console.log('🎉 Transfer execution completed')
       } catch (error) {
-        console.error('❌ 转账执行异常:', error)
-        this.cancelTransferFlow(`转账执行失败：${error instanceof Error ? error.message : '未知错误'}`)
+        console.error('❌ Transfer execution exception:', error)
+        this.cancelTransferFlow(`Transfer execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
-    } else if (input.includes('取消') || input.includes('不') || input.includes('cancel')) {
-      console.log('❌ 用户取消转账')
-      this.cancelTransferFlow('用户取消')
+    } else if (input.includes('cancel') || input.includes('no') || input.includes('stop')) {
+      console.log('❌ User cancelled the transfer')
+      this.cancelTransferFlow('User cancelled')
     } else {
-      console.log('🔄 用户输入不明确，重新询问')
-      console.log('🔍 用户说的是:', `"${input}"`)
+      console.log('🔄 Input unclear; asking again')
+      console.log('🔍 User said:', `"${input}"`)
       this.transferSteps.attempts++
       if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-        this.cancelTransferFlow('确认失败次数过多')
+        this.cancelTransferFlow('Too many failed confirmations')
       } else {
-        voiceService.speak('请明确说"确认"执行转账，或说"取消"退出')
+        voiceService.speak('Please clearly say "confirm" to execute the transfer or "cancel" to exit.')
         this.waitForConfirmation()
       }
     }
   }
 
   /**
-   * 执行分步转账
+   * Execute step-by-step transfer
    */
   private async executeStepTransfer() {
     const { wallet } = useWalletStore.getState()
     
-    console.log('🚀 开始执行分步转账')
-    console.log('💰 转账信息:', {
+    console.log('🚀 Starting step-by-step transfer')
+    console.log('💰 Transfer details:', {
       recipient: this.transferSteps.recipient,
       amount: this.transferSteps.amount
     })
     
     if (!wallet || !this.transferSteps.recipient) {
-      console.error('❌ 转账信息不完整')
-      this.cancelTransferFlow('转账信息不完整')
+      console.error('❌ Transfer information is incomplete')
+      this.cancelTransferFlow('Transfer information is incomplete')
       return
     }
 
     const transferRequest: TransferRequest = {
       to: this.transferSteps.recipient.value,
       amount: this.transferSteps.amount,
-      token: undefined, // 固定为ETH
+      token: undefined, // ETH only
       tokenSymbol: 'eth'
     }
 
     try {
-      voiceService.speak('正在执行转账，请稍候...')
-      console.log('📤 发送转账请求:', transferRequest)
+      voiceService.speak('Executing the transfer. Please wait...')
+      console.log('📤 Sending transfer request:', transferRequest)
       
-      // 如果是联系人，标记使用
+      // Mark contact as used when applicable
       if (this.transferSteps.recipient.type === 'contact') {
         const contact = contactsService.findContactByAddress(this.transferSteps.recipient.value)
         if (contact) {
           contactsService.markContactUsed(contact.id)
-          console.log('📞 已标记联系人使用:', contact.name)
+          console.log('📞 Marked contact as used:', contact.name)
         }
       }
 
       await this.executeTransfer(transferRequest, wallet.privateKey)
-      console.log('✅ 转账执行完成')
+      console.log('✅ Transfer execution completed')
       this.resetTransferSteps()
       
     } catch (error) {
-      console.error('❌ 转账执行失败:', error)
-      const errorMessage = error instanceof Error ? error.message : '未知错误'
-      voiceService.speak(`转账失败：${errorMessage}`)
-      this.cancelTransferFlow(`转账失败：${errorMessage}`)
+      console.error('❌ Transfer execution failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      voiceService.speak(`Transfer failed: ${errorMessage}`)
+      this.cancelTransferFlow(`Transfer failed: ${errorMessage}`)
     }
   }
 
   /**
-   * 取消转账流程
+   * Cancel transfer flow
    */
   private cancelTransferFlow(reason: string) {
-    voiceService.speak(`转账已取消：${reason}`)
+    voiceService.speak(`Transfer cancelled.：${reason}`)
     this.resetTransferSteps()
   }
 
   /**
-   * 重置转账步骤
+   * Reset transfer steps
    */
   private resetTransferSteps() {
     this.transferSteps = {
@@ -1070,17 +1073,17 @@ class CommandService {
   }
 
   /**
-   * 开始逐步转账流程 - 清晰的步骤引导
+   * Start guided step-by-step transfer flow
    */
   private async startStepByStepTransferFlow() {
     const { wallet } = useWalletStore.getState()
     
     if (!wallet) {
-      voiceService.speak('请先创建或导入钱包')
+      voiceService.speak('Please create or import a wallet first.')
       return
     }
 
-    // 重置转账状态
+    // Reset transfer state
     this.transferSteps = {
       isActive: true,
       step: 'recipient',
@@ -1090,12 +1093,12 @@ class CommandService {
       maxAttempts: 3
     }
 
-    // 开始第一步：询问联系人
-    voiceService.speak('开始转账流程。请说出联系人姓名')
+    // Begin by asking for the contact
+    voiceService.speak('Starting transfer flow. Please say the contact name.')
     this.waitForRecipientInput()
   }
 
 }
 
-// 单例实例
+// Singleton instance
 export const commandService = new CommandService()

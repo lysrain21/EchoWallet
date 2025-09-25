@@ -1,6 +1,6 @@
 /**
- * Echo Wallet - 联系人管理组件
- * 为盲人用户提供无障碍的联系人管理界面
+ * Echo Wallet - Contact management component
+ * Accessible contact manager for voice-first interactions.
  */
 
 'use client'
@@ -18,7 +18,7 @@ export function ContactManager() {
 
   useEffect(() => {
     loadContacts()
-    // 不再自动添加测试联系人，需要用户手动点击按钮
+    // Contacts must be added manually by the user now
   }, [])
 
   const loadContacts = () => {
@@ -27,7 +27,7 @@ export function ContactManager() {
 
   const handleAddContact = () => {
     if (!newContact.name || !newContact.address) {
-      voiceService.speak('请填写联系人姓名和地址')
+      voiceService.speak('Please provide the contact name and address.')
       return
     }
 
@@ -38,44 +38,44 @@ export function ContactManager() {
         nickname: newContact.nickname || undefined
       })
       
-      voiceService.speak(`联系人 ${newContact.name} 添加成功`)
+      voiceService.speak(`Contact ${newContact.name} added successfully.`)
       setNewContact({ name: '', address: '', nickname: '' })
       setIsAddingContact(false)
       loadContacts()
     } catch (error) {
-      voiceService.speak('添加联系人失败')
+      voiceService.speak('Failed to add contact.')
     }
   }
 
   const handleRemoveContact = (contact: Contact) => {
     contactsService.removeContact(contact.id)
-    voiceService.speak(`已删除联系人 ${contact.name}`)
+    voiceService.speak(`Deleted contact ${contact.name}.`)
     loadContacts()
   }
 
   const speakContactInfo = (contact: Contact) => {
-    const info = `${contact.name}，地址：${contact.address.slice(0, 10)}...${contact.address.slice(-6)}`
+    const info = `${contact.name}, address ${contact.address.slice(0, 10)}...${contact.address.slice(-6)}`
     if (contact.usageCount > 0) {
-      voiceService.speak(`${info}，使用了 ${contact.usageCount} 次`)
+      voiceService.speak(`${info}, used ${contact.usageCount} times`)
     } else {
       voiceService.speak(info)
     }
   }
 
   return (
-    <div className="space-y-6" role="region" aria-label="联系人管理">
-      <AccessibleText text="联系人管理" level="h2" />
+    <div className="space-y-6" role="region" aria-label="Contact management">
+      <AccessibleText text="Contact Management" level="h2" />
       
-      {/* 添加联系人按钮 */}
+      {/* Toggle add contact form */}
       <AccessibleButton
         onClick={() => setIsAddingContact(!isAddingContact)}
         className="w-full p-4 bg-blue-600 text-white rounded-lg"
-        ariaLabel="添加新联系人"
+        ariaLabel="Add new contact"
       >
-        {isAddingContact ? '取消添加' : '添加联系人'}
+        {isAddingContact ? 'Cancel' : 'Add contact'}
       </AccessibleButton>
 
-      {/* 添加联系人表单 */}
+      {/* Add contact form */}
       {isAddingContact && (
         <form
           className="space-y-4 p-4 bg-gray-50 rounded-lg"
@@ -83,11 +83,11 @@ export function ContactManager() {
             e.preventDefault()
             handleAddContact()
           }}
-          aria-label="新联系人信息"
+          aria-label="New contact details"
         >
           <div>
             <label htmlFor="contact-name" className="block text-sm font-medium mb-2">
-              联系人姓名 *
+              Contact name *
             </label>
             <input
               id="contact-name"
@@ -95,7 +95,7 @@ export function ContactManager() {
               value={newContact.name}
               onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="例如：小明"
+              placeholder="e.g., Alice"
               required
               aria-required="true"
             />
@@ -103,7 +103,7 @@ export function ContactManager() {
 
           <div>
             <label htmlFor="contact-address" className="block text-sm font-medium mb-2">
-              钱包地址 *
+              Wallet address *
             </label>
             <input
               id="contact-address"
@@ -119,7 +119,7 @@ export function ContactManager() {
 
           <div>
             <label htmlFor="contact-nickname" className="block text-sm font-medium mb-2">
-              昵称（可选）
+              Nickname (optional)
             </label>
             <input
               id="contact-nickname"
@@ -127,30 +127,30 @@ export function ContactManager() {
               value={newContact.nickname}
               onChange={(e) => setNewContact({ ...newContact, nickname: e.target.value })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="例如：老板、朋友"
+              placeholder="e.g., boss, friend"
             />
           </div>
 
           <AccessibleButton
             type="submit"
             className="w-full p-3 bg-green-600 text-white rounded-lg"
-            ariaLabel="确认添加联系人"
+            ariaLabel="Confirm add contact"
           >
-            添加联系人
+            Save contact
           </AccessibleButton>
         </form>
       )}
 
-      {/* 联系人列表 */}
+      {/* Contact list */}
       <div className="space-y-3">
-        <AccessibleText text={`联系人列表 (${contacts.length})`} level="h3" />
+        <AccessibleText text={`Contacts (${contacts.length})`} level="h3" />
         
         {contacts.length === 0 ? (
           <div className="p-4 text-center text-gray-500">
-            暂无联系人，请添加您的第一个联系人
+            No contacts yet. Add your first contact.
           </div>
         ) : (
-          <div className="space-y-2" role="list" aria-label="联系人列表">
+          <div className="space-y-2" role="list" aria-label="Contact list">
             {contacts.map((contact) => (
               <div
                 key={contact.id}
@@ -161,33 +161,33 @@ export function ContactManager() {
                   <div className="flex-1">
                     <h4 className="font-medium text-lg">{contact.name}</h4>
                     {contact.nickname && (
-                      <p className="text-sm text-gray-600">昵称: {contact.nickname}</p>
+                      <p className="text-sm text-gray-600">Nickname: {contact.nickname}</p>
                     )}
                     <p className="text-sm text-gray-500 font-mono break-all mt-1">
                       {contact.address}
                     </p>
                     {contact.usageCount > 0 && (
                       <p className="text-xs text-green-600 mt-1">
-                        使用了 {contact.usageCount} 次
+                        Used {contact.usageCount} times
                       </p>
                     )}
                   </div>
-                  
+
                   <div className="flex flex-col space-y-2 ml-4">
                     <AccessibleButton
                       onClick={() => speakContactInfo(contact)}
                       className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded"
-                      ariaLabel={`播报 ${contact.name} 的信息`}
+                      ariaLabel={`Announce contact ${contact.name}`}
                     >
-                      播报
+                      Announce
                     </AccessibleButton>
-                    
+
                     <AccessibleButton
                       onClick={() => handleRemoveContact(contact)}
                       className="px-3 py-1 text-sm bg-red-100 text-red-800 rounded"
-                      ariaLabel={`删除联系人 ${contact.name}`}
+                      ariaLabel={`Delete contact ${contact.name}`}
                     >
-                      删除
+                      Delete
                     </AccessibleButton>
                   </div>
                 </div>
@@ -197,10 +197,10 @@ export function ContactManager() {
         )}
       </div>
 
-      {/* 常用联系人 */}
+      {/* Frequent contacts */}
       {contacts.filter(c => c.usageCount > 0).length > 0 && (
         <div className="space-y-3">
-          <AccessibleText text="常用联系人" level="h3" />
+          <AccessibleText text="Frequent Contacts" level="h3" />
           <div className="space-y-2">
             {contactsService.getFrequentContacts().map((contact) => (
               <div
@@ -211,15 +211,15 @@ export function ContactManager() {
                   <div>
                     <span className="font-medium">{contact.name}</span>
                     <span className="text-sm text-gray-600 ml-2">
-                      使用了 {contact.usageCount} 次
+                      Used {contact.usageCount} times
                     </span>
                   </div>
                   <AccessibleButton
                     onClick={() => speakContactInfo(contact)}
                     className="px-3 py-1 text-sm bg-green-600 text-white rounded"
-                    ariaLabel={`播报常用联系人 ${contact.name}`}
+                    ariaLabel={`Announce frequent contact ${contact.name}`}
                   >
-                    播报
+                    Announce
                   </AccessibleButton>
                 </div>
               </div>
@@ -228,14 +228,14 @@ export function ContactManager() {
         </div>
       )}
 
-      {/* 语音提示 */}
+      {/* Voice transfer tips */}
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <AccessibleText text="语音转账提示" level="h4" />
+        <AccessibleText text="Voice Transfer Tips" level="h4" />
         <ul className="mt-2 space-y-1 text-sm text-gray-700">
-          <li>• "转账0.1ETH给小明" - 给联系人转账</li>
-          <li>• "快速转账0.05ETH" - 给最近使用的联系人转账</li>
-          <li>• "给老板转0.2ETH" - 使用昵称转账</li>
-          <li>• "显示联系人" - 语音播报所有联系人</li>
+          <li>• "Transfer 0.1 ETH to Alice" – send funds to a contact</li>
+          <li>• "Quick transfer 0.05 ETH" – send to the most recent contact</li>
+          <li>• "Transfer 0.2 ETH to boss" – use nicknames for transfers</li>
+          <li>• "Show contacts" – list all saved contacts</li>
         </ul>
       </div>
     </div>

@@ -1,6 +1,6 @@
 /**
- * Echo Wallet - 极简语音钱包界面
- * 专为盲人用户设计的纯语音交互界面
+ * Echo Wallet - Minimal voice-first wallet interface
+ * Pure voice experience tailored for blind and low-vision users.
  */
 
 'use client'
@@ -19,19 +19,19 @@ export function MinimalVoiceWallet() {
   const [showFeedback, setShowFeedback] = useState(false)
   const [hasPlayedWelcome, setHasPlayedWelcome] = useState(false)
 
-  // 语音反馈处理
+  // Handle voice feedback events
   const handleVoiceFeedback = useCallback((message: string) => {
     setFeedbackMessage(message)
     setShowFeedback(true)
   }, [])
 
-  // 初始化语音服务和欢迎消息
+  // Initialize voice service and welcome message
   useEffect(() => {
     const hasPlayedBefore = localStorage.getItem('echo-welcome-played')
     
     if (!hasPlayedBefore && !hasPlayedWelcome) {
       setTimeout(() => {
-        const welcomeMessage = '欢迎使用Echo钱包，这是一款专为视障用户设计的Web3钱包。按空格键或轻触屏幕开始语音操作。'
+        const welcomeMessage = 'Welcome to Echo Wallet, a Web3 wallet built for blind and low-vision users. Press Space or tap the screen to start voice control.'
         voiceService.speak(welcomeMessage)
         handleVoiceFeedback(welcomeMessage)
         setHasPlayedWelcome(true)
@@ -39,43 +39,43 @@ export function MinimalVoiceWallet() {
       }, 1000)
     }
 
-    // 监听语音服务的反馈消息
+    // Listen to feedback from the voice service
     const originalSpeak = voiceService.speak.bind(voiceService)
     voiceService.speak = (text: string, options?: any) => {
       originalSpeak(text, options)
       handleVoiceFeedback(text)
     }
 
-    // 全局键盘事件
+    // Global keyboard events
     const handleKeyDown = (event: KeyboardEvent) => {
-      // 空格键激活语音
+      // Space starts listening
       if (event.code === 'Space' && !voiceState.isListening && !voiceState.isProcessing) {
         event.preventDefault()
         startVoiceInteraction()
       }
       
-      // Escape键停止语音
+      // Escape stops listening
       if (event.key === 'Escape' && voiceState.isListening) {
         event.preventDefault()
         commandService.stopListening()
-        handleVoiceFeedback('语音监听已停止')
+        handleVoiceFeedback('Voice listening stopped.')
       }
 
-      // R键重复上次命令
+      // R repeats the last command
       if (event.key === 'r' || event.key === 'R') {
         event.preventDefault()
         if (voiceState.lastCommand) {
-          const message = `重复上次命令：${voiceState.lastCommand.parameters?.text || '未知命令'}`
+          const message = `Repeating last command: ${voiceState.lastCommand.parameters?.text || 'unknown command'}`
           voiceService.speak(message)
           handleVoiceFeedback(message)
         } else {
-          const message = '没有可重复的命令'
+          const message = 'No command available to repeat.'
           voiceService.speak(message)
           handleVoiceFeedback(message)
         }
       }
 
-      // F1键帮助
+      // F1 displays help
       if (event.key === 'F1') {
         event.preventDefault()
         showHelp()
@@ -86,43 +86,43 @@ export function MinimalVoiceWallet() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [voiceState, hasPlayedWelcome, handleVoiceFeedback])
 
-  // 启动语音交互
+  // Start voice interaction
   const startVoiceInteraction = useCallback(() => {
     if (voiceState.isProcessing) {
-      handleVoiceFeedback('系统正在处理中，请稍候')
+      handleVoiceFeedback('The system is processing, please wait.')
       return
     }
 
     if (voiceState.isListening) {
-      handleVoiceFeedback('正在监听中，请说话')
+      handleVoiceFeedback('Listening, please speak.')
       return
     }
 
     commandService.startListening()
-    handleVoiceFeedback('开始语音监听，请说出您的指令')
+    handleVoiceFeedback('Listening started. Please say your command.')
   }, [voiceState, handleVoiceFeedback])
 
-  // 显示帮助信息
+  // Display help information
   const showHelp = useCallback(() => {
     const helpMessage = `
-      Echo钱包语音命令：
-      创建钱包 - 生成新的钱包地址
-      导入钱包 - 通过生物识别导入已有钱包  
-      查询余额 - 查看当前余额
-      转账 - 开始转账流程
-      查询交易 - 查看交易状态
+      Echo Wallet voice commands:
+      Create wallet – generate a new wallet address
+      Import wallet – recover using biometrics  
+      Check balance – hear your current balance
+      Transfer – start the guided transfer flow
+      Check transaction – review transaction status
       
-      键盘快捷键：
-      空格键 - 开始语音输入
-      Escape键 - 停止语音监听
-      R键 - 重复上次命令
-      F1键 - 显示此帮助
+      Keyboard shortcuts:
+      Space – start voice input
+      Escape – stop listening
+      R – repeat last command
+      F1 – show this help
     `
     voiceService.speak(helpMessage)
     handleVoiceFeedback(helpMessage)
   }, [handleVoiceFeedback])
 
-  // 处理点击事件（触屏支持）
+  // Handle tap events for touch devices
   const handleScreenTouch = useCallback(() => {
     if (!voiceState.isListening && !voiceState.isProcessing) {
       startVoiceInteraction()
@@ -142,13 +142,13 @@ export function MinimalVoiceWallet() {
       onKeyDown={(e) => e.code === 'Space' && handleScreenTouch()}
       tabIndex={0}
       role="main"
-      aria-label="Echo钱包语音交互界面"
+      aria-label="Echo Wallet voice interaction interface"
     >
-      {/* 主要声波可视化区域 */}
+      {/* Primary waveform visualization */}
       <div className="relative w-full h-full max-w-4xl max-h-4xl aspect-square">
         <VoiceWaveform className="w-full h-full" />
         
-        {/* 中心提示文字 - 仅在特定情况下显示 */}
+        {/* Central hint text shown in specific states */}
         {!wallet && !voiceState.isListening && !voiceState.isProcessing && (
           <div className="
             absolute inset-0 
@@ -160,15 +160,15 @@ export function MinimalVoiceWallet() {
               Echo Wallet
             </h1>
             <p className="text-lg md:text-xl font-light mb-8">
-              语音Web3钱包
+              Voice-first Web3 wallet
             </p>
             <p className="text-sm md:text-base text-white/60 max-w-md">
-              按空格键或轻触屏幕开始语音操作
+              Press Space or tap the screen to start voice control
             </p>
           </div>
         )}
 
-        {/* 钱包连接状态指示 */}
+      {/* Wallet connection indicator */}
         {wallet && (
           <div className="
             absolute top-8 left-1/2 transform -translate-x-1/2
@@ -177,11 +177,11 @@ export function MinimalVoiceWallet() {
             text-green-100 text-sm font-medium
             border border-green-500/30
           ">
-            钱包已连接
+            Wallet connected
           </div>
         )}
 
-        {/* 语音状态指示 */}
+      {/* Voice status indicator */}
         <div className="
           absolute bottom-8 left-1/2 transform -translate-x-1/2
           flex items-center space-x-4
@@ -194,14 +194,14 @@ export function MinimalVoiceWallet() {
             ${!voiceState.isListening && !voiceState.isProcessing ? 'bg-blue-500' : ''}
           `} />
           <span>
-            {voiceState.isListening && '正在监听...'}
-            {voiceState.isProcessing && '处理中...'}
-            {!voiceState.isListening && !voiceState.isProcessing && '待机中'}
+            {voiceState.isListening && 'Listening...'}
+            {voiceState.isProcessing && 'Processing...'}
+            {!voiceState.isListening && !voiceState.isProcessing && 'Idle'}
           </span>
         </div>
       </div>
 
-      {/* 语音反馈弹窗 */}
+      {/* Voice feedback modal */}
       <VoiceFeedbackModal
         isVisible={showFeedback}
         message={feedbackMessage}
@@ -209,16 +209,16 @@ export function MinimalVoiceWallet() {
         autoCloseDelay={4000}
       />
 
-      {/* 隐藏的无障碍信息 */}
+      {/* Hidden accessible content */}
       <div className="sr-only">
-        <h1>Echo Wallet - 语音Web3钱包</h1>
-        <p>专为视障用户设计的以太坊钱包，完全支持语音操作</p>
-        <p>当前状态：{
-          voiceState.isListening ? '正在监听语音输入' :
-          voiceState.isProcessing ? '正在处理语音命令' :
-          '语音待机状态'
+        <h1>Echo Wallet - Voice-first Web3 wallet</h1>
+        <p>Ethereum wallet built for blind users with full voice control</p>
+        <p>Current status: {
+          voiceState.isListening ? 'Listening for voice input' :
+          voiceState.isProcessing ? 'Processing voice command' :
+          'Voice standby'
         }</p>
-        {wallet && <p>钱包已连接，地址：{wallet.address}</p>}
+        {wallet && <p>Wallet connected, address: {wallet.address}</p>}
       </div>
     </div>
   )

@@ -1,6 +1,6 @@
 /**
- * Echo Wallet - 可访问性按钮组件
- * 专为盲人用户优化的语音交互按钮
+ * Echo Wallet - Accessibility components
+ * Voice-first controls optimized for blind and low-vision users.
  */
 
 'use client'
@@ -18,10 +18,10 @@ export function VoiceButton({ className = '', children }: VoiceButtonProps) {
   const voiceState = useVoiceState()
   const [isPressed, setIsPressed] = useState(false)
 
-  // 键盘事件处理
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // 空格键激活语音
+      // Space starts listening
       if (event.code === 'Space' && !event.repeat) {
         event.preventDefault()
         if (!voiceState.isListening && !voiceState.isProcessing) {
@@ -30,7 +30,7 @@ export function VoiceButton({ className = '', children }: VoiceButtonProps) {
         }
       }
       
-      // Escape键停止语音
+      // Escape stops listening
       if (event.code === 'Escape') {
         event.preventDefault()
         commandService.stopListening()
@@ -62,15 +62,15 @@ export function VoiceButton({ className = '', children }: VoiceButtonProps) {
   }
 
   const getButtonText = () => {
-    if (voiceState.isProcessing) return '处理中...'
-    if (voiceState.isListening) return '正在听...'
-    return '点击说话'
+    if (voiceState.isProcessing) return 'Processing...'
+    if (voiceState.isListening) return 'Listening...'
+    return 'Click to speak'
   }
 
   const getAriaLabel = () => {
-    if (voiceState.isProcessing) return '正在处理语音命令，请稍候'
-    if (voiceState.isListening) return '正在监听语音输入，按Escape键停止'
-    return '按空格键或点击开始语音输入'
+    if (voiceState.isProcessing) return 'Processing your voice command, please wait.'
+    if (voiceState.isListening) return 'Listening for voice input. Press Escape to stop.'
+    return 'Press Space or click to start voice input.'
   }
 
   return (
@@ -95,15 +95,15 @@ export function VoiceButton({ className = '', children }: VoiceButtonProps) {
       tabIndex={0}
     >
       <div className="flex flex-col items-center justify-center space-y-2">
-        {/* 语音图标 */}
+        {/* Voice icon */}
         <div className="text-2xl" aria-hidden="true">
           {voiceState.isProcessing ? '⏳' : voiceState.isListening ? '🎤' : '🗣️'}
         </div>
         
-        {/* 按钮文字 */}
+        {/* Button label */}
         <span>{children || getButtonText()}</span>
         
-        {/* 状态指示器 */}
+        {/* Status indicator */}
         {voiceState.isListening && (
           <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full animate-ping" />
         )}
@@ -113,7 +113,7 @@ export function VoiceButton({ className = '', children }: VoiceButtonProps) {
 }
 
 /**
- * 可访问性文本显示组件
+ * Accessible text display component
  */
 interface AccessibleTextProps {
   text: string
@@ -149,7 +149,7 @@ export function AccessibleText({
 }
 
 /**
- * 可访问性状态显示组件
+ * Accessible wallet status component
  */
 export function WalletStatus() {
   const { wallet, balance, isLoading, error } = useWalletStore()
@@ -162,7 +162,7 @@ export function WalletStatus() {
         aria-live="polite"
         role="status"
       >
-        <AccessibleText text="正在加载..." live="assertive" />
+        <AccessibleText text="Loading..." live="assertive" />
       </div>
     )
   }
@@ -174,7 +174,7 @@ export function WalletStatus() {
         aria-live="assertive"
         role="alert"
       >
-        <AccessibleText text={`错误：${error}`} live="assertive" />
+        <AccessibleText text={`Error: ${error}`} live="assertive" />
       </div>
     )
   }
@@ -185,35 +185,29 @@ export function WalletStatus() {
         className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg"
         aria-live="polite"
       >
-        <AccessibleText text="请创建或导入钱包" />
+        <AccessibleText text="Please create or import a wallet." />
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      {/* 钱包连接状态 */}
+      {/* Wallet connection state */}
       <div
         className="p-4 bg-green-50 border border-green-200 rounded-lg"
         aria-live="polite"
       >
-        <AccessibleText 
-          text="钱包已连接，可以开始语音操作"
-          level="h3"
-        />
+        <AccessibleText text="Wallet connected. Voice control ready." level="h3" />
       </div>
 
-      {/* 语音状态 */}
+      {/* Voice status */}
       {voiceState.isListening && (
         <div
           className="p-4 bg-purple-50 border border-purple-200 rounded-lg"
           aria-live="assertive"
           role="status"
         >
-          <AccessibleText 
-            text="正在监听语音输入..."
-            live="assertive"
-          />
+          <AccessibleText text="Listening for voice input..." live="assertive" />
         </div>
       )}
     </div>
@@ -221,12 +215,12 @@ export function WalletStatus() {
 }
 
 /**
- * 键盘快捷键帮助组件
+ * Keyboard shortcut helper
  */
 export function KeyboardHelp() {
   const shortcuts = [
-    { key: '空格键', action: '开始语音输入' },
-    { key: 'Escape键', action: '停止语音输入' }
+    { key: 'Space', action: 'Start voice input' },
+    { key: 'Escape', action: 'Stop voice input' }
   ]
 
   return (
@@ -235,11 +229,7 @@ export function KeyboardHelp() {
       role="region"
       aria-labelledby="keyboard-help-title"
     >
-      <AccessibleText 
-        id="keyboard-help-title"
-        text="键盘快捷键"
-        level="h3"
-      />
+      <AccessibleText id="keyboard-help-title" text="Keyboard Shortcuts" level="h3" />
       
       <ul className="mt-4 space-y-2" role="list">
         {shortcuts.map((shortcut, index) => (
@@ -257,7 +247,7 @@ export function KeyboardHelp() {
 }
 
 /**
- * 可访问性按钮组件
+ * Accessible button component
  */
 interface AccessibleButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   ariaLabel?: string
@@ -281,9 +271,9 @@ export function AccessibleButton({
   }
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // 语音反馈
+    // Optional voice feedback
     if (ariaLabel) {
-      // 可以添加轻微的语音提示
+      // Hook for adding light auditory feedback
     }
     onClick?.(e)
   }

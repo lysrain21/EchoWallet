@@ -1,13 +1,13 @@
 /**
  * Echo Wallet - Configuration
- * 钱包配置文件，包含网络、API密钥等配置
+ * Wallet configuration including network and speech settings.
  */
 
 export const WALLET_CONFIG = {
-  // ZeroDev 配置
+  // ZeroDev configuration
   ZERODEV_PROJECT_ID: process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID || '',
   
-  // 网络配置
+  // Network configuration
   NETWORKS: {
     sepolia: {
       chainId: 11155111,
@@ -29,7 +29,7 @@ export const WALLET_CONFIG = {
     }
   },
 
-  // 默认代币列表
+  // Default token list
   DEFAULT_TOKENS: {
     sepolia: [
       {
@@ -55,16 +55,16 @@ export const WALLET_CONFIG = {
     ]
   },
 
-  // 语音识别配置
+  // Speech recognition configuration
   SPEECH_CONFIG: {
-    SUPPORTED_LANGUAGES: ['zh-CN', 'en-US'],
-    DEFAULT_LANGUAGE: 'zh-CN',
+    SUPPORTED_LANGUAGES: ['en-US'],
+    DEFAULT_LANGUAGE: 'en-US',
     CONFIDENCE_THRESHOLD: 0.7,
     MAX_ALTERNATIVES: 3,
     CONTINUOUS_MODE: true
   },
 
-  // 可访问性配置
+  // Accessibility configuration
   ACCESSIBILITY: {
     ANNOUNCE_ACTIONS: true,
     VERBOSE_MODE: true,
@@ -78,66 +78,59 @@ export const WALLET_CONFIG = {
     }
   },
 
-  // 安全配置
+  // Security configuration
   SECURITY: {
-    SESSION_TIMEOUT: 30 * 60 * 1000, // 30分钟
+    SESSION_TIMEOUT: 30 * 60 * 1000, // 30 minutes
     MAX_RETRY_ATTEMPTS: 3,
     REQUIRE_CONFIRMATION: true
   }
 }
 
-// 语音命令模板
+// Voice command templates
 export const VOICE_COMMANDS = {
   CREATE_WALLET: [
-    '创建钱包',
-    '新建钱包',
-    '建立新钱包',
     'create wallet',
-    'new wallet'
+    'new wallet',
+    'generate wallet'
   ],
   
   IMPORT_WALLET: [
-    '导入钱包',
-    '恢复钱包',
-    '从助记词恢复',
     'import wallet',
-    'restore wallet'
+    'restore wallet',
+    'recover wallet',
+    'sign in wallet'
   ],
   
   CHECK_BALANCE: [
-    '查询余额',
-    '我有多少钱',
-    '账户余额',
     'check balance',
-    'show balance'
+    'show balance',
+    'what is my balance',
+    'wallet balance'
   ],
   
   TRANSFER: [
-    '转账',
-    '发送',
-    '转账给',
     'transfer',
     'send',
-    'send to'
+    'send to',
+    'transfer to'
   ],
   
   TRANSACTION_STATUS: [
-    '查询交易',
-    '交易状态',
-    '查看交易',
     'check transaction',
-    'transaction status'
+    'transaction status',
+    'track transaction',
+    'transaction update'
   ]
 }
 
-// 语音播报模板
+// Text-to-speech templates
 export const TTS_TEMPLATES = {
-  WALLET_CREATED: '钱包创建成功，您的地址是 {address}',
-  BALANCE_RESULT: '您的 {token} 余额是 {amount}',
-  TRANSFER_CONFIRM: '请确认转账：发送 {amount} {token} 到地址 {to}',
-  TRANSFER_SUCCESS: '转账已提交成功，正在等待网络确认',
-  TRANSFER_FAILED: '转账失败：{error}',
-  WAITING_FOR_COMMAND: '请说出您的指令',
-  COMMAND_NOT_RECOGNIZED: '抱歉，我没有理解您的指令，请重新说一遍',
-  PROCESSING: '正在处理您的请求，请稍候...'
+  WALLET_CREATED: 'Wallet created successfully. Your address is {address}',
+  BALANCE_RESULT: 'Your {token} balance is {amount}',
+  TRANSFER_CONFIRM: 'Please confirm the transfer: send {amount} {token} to address {to}',
+  TRANSFER_SUCCESS: 'Transfer submitted successfully. Waiting for network confirmation.',
+  TRANSFER_FAILED: 'Transfer failed: {error}',
+  WAITING_FOR_COMMAND: 'Please say your command.',
+  COMMAND_NOT_RECOGNIZED: 'Sorry, I did not understand your command. Please try again.',
+  PROCESSING: 'Processing your request, please wait...'
 }

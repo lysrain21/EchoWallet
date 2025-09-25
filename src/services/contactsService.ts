@@ -1,5 +1,5 @@
 /**
- * Echo Wallet - 联系人管理服务
+ * Echo Wallet - Contact management service
  */
 
 import { Contact } from '@/types/contacts'
@@ -8,11 +8,11 @@ class ContactsService {
   private storageKey = 'echo_contacts'
 
   /**
-   * 获取所有联系人
+   * Retrieve all saved contacts from local storage.
    */
   getContacts(): Contact[] {
     try {
-      // 检查是否在浏览器环境
+      // Ensure we are running in a browser environment
       if (typeof window === 'undefined' || !window.localStorage) {
         return []
       }
@@ -25,21 +25,21 @@ class ContactsService {
   }
 
   /**
-   * 保存联系人
+   * Persist the contact array to storage.
    */
   private saveContacts(contacts: Contact[]) {
     try {
-      // 检查是否在浏览器环境
+      // Ensure we are running in a browser environment
       if (typeof window !== 'undefined' && window.localStorage) {
         localStorage.setItem(this.storageKey, JSON.stringify(contacts))
       }
     } catch (error) {
-      console.warn('保存联系人失败:', error)
+      console.warn('Failed to save contacts:', error)
     }
   }
 
   /**
-   * 添加联系人
+   * Add a new contact entry.
    */
   addContact(contactData: Omit<Contact, 'id' | 'createdAt' | 'usageCount'>): Contact {
     const contacts = this.getContacts()
@@ -58,29 +58,29 @@ class ContactsService {
   }
 
   /**
-   * 智能查找联系人（支持模糊匹配）
+   * Find a contact using fuzzy matching on name, nickname, or tags.
    */
   findContact(query: string): Contact | undefined {
     const contacts = this.getContacts()
     const searchQuery = query.toLowerCase().trim()
 
-    // 1. 精确匹配姓名
+    // 1. Exact match on name
     let match = contacts.find(c => c.name.toLowerCase() === searchQuery)
     if (match) return match
 
-    // 2. 精确匹配昵称
+    // 2. Exact match on nickname
     match = contacts.find(c => c.nickname?.toLowerCase() === searchQuery)
     if (match) return match
 
-    // 3. 模糊匹配姓名
+    // 3. Fuzzy match on name
     match = contacts.find(c => c.name.toLowerCase().includes(searchQuery))
     if (match) return match
 
-    // 4. 模糊匹配昵称
+    // 4. Fuzzy match on nickname
     match = contacts.find(c => c.nickname?.toLowerCase().includes(searchQuery))
     if (match) return match
 
-    // 5. 标签匹配
+    // 5. Tag match
     match = contacts.find(c => 
       c.tags?.some(tag => tag.toLowerCase().includes(searchQuery))
     )
@@ -89,7 +89,7 @@ class ContactsService {
   }
 
   /**
-   * 根据地址查找联系人
+   * Locate a contact by address.
    */
   findContactByAddress(address: string): Contact | undefined {
     const contacts = this.getContacts()
@@ -97,7 +97,7 @@ class ContactsService {
   }
 
   /**
-   * 获取常用联系人
+   * Return frequently used contacts ordered by usage.
    */
   getFrequentContacts(limit = 5): Contact[] {
     const contacts = this.getContacts()
@@ -108,7 +108,7 @@ class ContactsService {
   }
 
   /**
-   * 标记联系人被使用
+   * Increment usage metadata for a contact.
    */
   markContactUsed(contactId: string) {
     const contacts = this.getContacts()
@@ -122,7 +122,7 @@ class ContactsService {
   }
 
   /**
-   * 更新联系人
+   * Update contact fields by id.
    */
   updateContact(id: string, updates: Partial<Contact>) {
     const contacts = this.getContacts()
@@ -135,7 +135,7 @@ class ContactsService {
   }
 
   /**
-   * 删除联系人
+   * Remove a contact by id.
    */
   removeContact(id: string) {
     const contacts = this.getContacts()

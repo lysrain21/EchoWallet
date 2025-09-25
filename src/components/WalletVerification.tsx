@@ -1,6 +1,6 @@
 /**
- * Echo Wallet - 钱包验证组件
- * 显示钱包创建状态和验证信息
+ * Echo Wallet - Wallet verification component
+ * Displays wallet status and verification details.
  */
 
 'use client'
@@ -26,37 +26,37 @@ export function WalletVerification() {
     const details: string[] = []
 
     try {
-      // 1. 基础验证
+      // 1. Basic validation
       const isValid = walletService.validateWallet(wallet)
       
       if (isValid) {
-        details.push('✅ 钱包基础信息验证通过')
-        details.push('📍 钱包地址格式正确')
-        details.push(`🔑 私钥长度: ${wallet.privateKey.length} 字符`)
+        details.push('✅ Wallet basics verified successfully')
+        details.push('📍 Wallet address format is correct')
+        details.push(`🔑 Private key length: ${wallet.privateKey.length} characters`)
         
         if (wallet.mnemonic) {
           const wordCount = wallet.mnemonic.split(' ').length
-          details.push(`📝 助记词: ${wordCount} 个单词`)
+          details.push(`📝 Mnemonic: ${wordCount} words`)
         }
       } else {
-        details.push('❌ 钱包基础验证失败')
+        details.push('❌ Wallet basics verification failed')
       }
 
-      // 2. 网络连接测试
+      // 2. Network connectivity test
       const networkTest = await walletService.testWalletConnection(wallet.address)
       
       if (networkTest) {
-        details.push('🌐 网络连接测试通过')
+        details.push('🌐 Network connectivity test passed')
       } else {
-        details.push('⚠️ 网络连接测试失败')
+        details.push('⚠️ Network connectivity test failed')
       }
 
-      // 3. 余额查询测试
+      // 3. Balance query test
       try {
         const balance = await walletService.getETHBalance(wallet.address)
-        details.push('💰 余额查询功能正常')
+        details.push('💰 Balance query succeeded')
       } catch (error) {
-        details.push('❌ 余额查询失败')
+        details.push('❌ Balance query failed')
       }
 
       setVerificationResult({
@@ -66,7 +66,7 @@ export function WalletVerification() {
       })
 
     } catch (error) {
-      details.push(`❌ 验证过程出错: ${error instanceof Error ? error.message : '未知错误'}`)
+      details.push(`❌ Verification error: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setVerificationResult({
         isValid: false,
         details,
@@ -80,51 +80,51 @@ export function WalletVerification() {
   if (!wallet) {
     return (
       <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-        <AccessibleText text="暂无钱包信息" level="h3" />
-        <p className="mt-2 text-gray-600">请先创建或导入钱包</p>
+        <AccessibleText text="No wallet information yet" level="h3" />
+        <p className="mt-2 text-gray-600">Please create or import a wallet first.</p>
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      {/* 钱包基础信息 */}
+      {/* Wallet basics */}
       <div className="p-4 bg-white border border-gray-200 rounded-lg">
-        <AccessibleText text="钱包信息" level="h3" className="mb-4" />
+        <AccessibleText text="Wallet Information" level="h3" className="mb-4" />
         
         <div className="space-y-2 text-sm">
           <div>
-            <strong>地址状态:</strong> 
-            <span className="ml-2">已验证有效</span>
+            <strong>Address status:</strong> 
+            <span className="ml-2">Verified</span>
           </div>
           
           <div>
-            <strong>类型:</strong> 
-            <span className="ml-2">{wallet.isSmartWallet ? '智能钱包' : 'EOA钱包'}</span>
+            <strong>Type:</strong> 
+            <span className="ml-2">{wallet.isSmartWallet ? 'Smart wallet' : 'EOA wallet'}</span>
           </div>
           
           {wallet.mnemonic && (
             <div>
-              <strong>助记词:</strong> 
-              <span className="ml-2">{wallet.mnemonic.split(' ').length} 个单词</span>
+              <strong>Mnemonic:</strong> 
+              <span className="ml-2">{wallet.mnemonic.split(' ').length} words</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* 验证按钮 */}
+      {/* Verification button */}
       <div className="text-center">
         <button
           onClick={runVerification}
           disabled={isVerifying}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
-          aria-label="运行钱包验证测试"
+          aria-label="Run wallet verification"
         >
-          {isVerifying ? '验证中...' : '验证钱包'}
+          {isVerifying ? 'Verifying...' : 'Verify wallet'}
         </button>
       </div>
 
-      {/* 验证结果 */}
+      {/* Verification results */}
       {verificationResult && (
         <div 
           className={`p-4 border rounded-lg ${
@@ -137,7 +137,7 @@ export function WalletVerification() {
         >
           <AccessibleText 
             id="verification-results"
-            text="验证结果" 
+            text="Verification results" 
             level="h4" 
             className="mb-3"
           />
@@ -154,25 +154,25 @@ export function WalletVerification() {
             ))}
           </div>
 
-          {/* 总体状态 */}
+          {/* Overall status */}
           <div className="mt-4 p-3 rounded border-t">
             <div className={`font-bold ${
               verificationResult.isValid ? 'text-green-700' : 'text-red-700'
             }`}>
-              总体状态: {verificationResult.isValid ? '✅ 验证通过' : '❌ 验证失败'}
+              Overall status: {verificationResult.isValid ? '✅ Verification passed' : '❌ Verification failed'}
             </div>
           </div>
         </div>
       )}
 
-      {/* 使用说明 */}
+      {/* Usage notes */}
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <AccessibleText text="验证说明" level="h4" className="mb-2" />
+        <AccessibleText text="Verification Notes" level="h4" className="mb-2" />
         <ul className="text-sm space-y-1 text-blue-800">
-          <li>• 点击"验证钱包"按钮运行完整验证</li>
-          <li>• 验证包括地址格式、私钥有效性、助记词完整性</li>
-          <li>• 网络连接测试确保可以与区块链交互</li>
-          <li>• 详细日志信息请查看浏览器控制台</li>
+          <li>• Click "Verify wallet" to run the full verification.</li>
+          <li>• Checks include address format, private key validity, and mnemonic completeness.</li>
+          <li>• Network connectivity test ensures blockchain access.</li>
+          <li>• See the browser console for detailed logs.</li>
         </ul>
       </div>
     </div>

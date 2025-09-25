@@ -1,27 +1,27 @@
 /**
- * Echo Wallet - 全局状态管理
- * 使用 Zustand 管理应用状态
+ * Echo Wallet - Global state management
+ * Manage application state with Zustand
  */
 
 import { create } from "zustand";
 import { AppState, WalletAccount, Transaction, VoiceState } from "@/types";
 
 interface WalletStore extends AppState {
-  // 钱包操作
+  // Wallet actions
   setWallet: (wallet: WalletAccount | null) => void;
   updateBalance: (balance: any) => void;
   addTransaction: (transaction: Transaction) => void;
   updateTransaction: (hash: string, updates: Partial<Transaction>) => void;
 
-  // 语音状态
+  // Voice state
   setVoiceState: (voice: Partial<VoiceState>) => void;
 
-  // 应用状态
+  // App state
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setNetwork: (network: "mainnet" | "sepolia" | "polygon") => void;
 
-  // 重置状态
+  // Reset state
   reset: () => void;
 }
 
@@ -44,7 +44,7 @@ const initialState: AppState = {
 export const useWalletStore = create<WalletStore>((set, get) => ({
   ...initialState,
 
-  // 钱包操作
+  // Wallet actions
   setWallet: (wallet) => set({ wallet }),
 
   updateBalance: (balance) => set({ balance }),
@@ -61,24 +61,24 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
       ),
     })),
 
-  // 语音状态
+  // Voice state
   setVoiceState: (voiceUpdates) =>
     set((state) => ({
       voice: { ...state.voice, ...voiceUpdates },
     })),
 
-  // 应用状态
+  // App state
   setLoading: (isLoading) => set({ isLoading }),
 
   setError: (error) => set({ error }),
 
   setNetwork: (network) => set({ network }),
 
-  // 重置状态
+  // Reset state
   reset: () => set(initialState),
 }));
 
-// 选择器钩子
+// Selector hooks
 export const useWallet = () => useWalletStore((state) => state.wallet);
 export const useBalance = () => useWalletStore((state) => state.balance);
 export const useTransactions = () =>

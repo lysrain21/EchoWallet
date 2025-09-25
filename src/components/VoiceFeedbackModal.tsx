@@ -1,6 +1,6 @@
 /**
- * Echo Wallet - 语音反馈弹窗组件
- * 显示语音播报内容的文字转写
+ * Echo Wallet - Voice feedback modal
+ * Displays textual transcription of spoken feedback.
  */
 
 'use client'
@@ -28,7 +28,7 @@ export function VoiceFeedbackModal({
     if (isVisible && message) {
       setShow(true)
       
-      // 自动关闭
+      // Auto-dismiss when requested
       if (autoCloseDelay > 0) {
         const timer = setTimeout(() => {
           setShow(false)
@@ -46,13 +46,13 @@ export function VoiceFeedbackModal({
 
   return (
     <>
-      {/* 背景遮罩 */}
+      {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-30 z-40"
         aria-hidden="true"
       />
       
-      {/* 弹窗内容 */}
+      {/* Modal content */}
       <div
         className="fixed inset-x-4 bottom-1/3 z-50 flex items-center justify-center"
         role="dialog"
@@ -69,7 +69,7 @@ export function VoiceFeedbackModal({
           transform transition-all duration-300 ease-out
           animate-in slide-in-from-bottom-4 fade-in-0
         ">
-          {/* 状态指示器 */}
+          {/* Status indicator */}
           <div className="flex items-center justify-center mb-4">
             <div className={`
               w-4 h-4 rounded-full mr-3
@@ -78,13 +78,13 @@ export function VoiceFeedbackModal({
               ${!voiceState.isListening && !voiceState.isProcessing ? 'bg-blue-500' : ''}
             `} />
             <span className="text-sm font-medium text-gray-600">
-              {voiceState.isListening && '正在监听'}
-              {voiceState.isProcessing && '处理中'}
-              {!voiceState.isListening && !voiceState.isProcessing && '系统反馈'}
+              {voiceState.isListening && 'Listening'}
+              {voiceState.isProcessing && 'Processing'}
+              {!voiceState.isListening && !voiceState.isProcessing && 'System feedback'}
             </span>
           </div>
 
-          {/* 主要消息内容 */}
+          {/* Primary message */}
           <div
             id="voice-feedback-content"
             className="
@@ -99,11 +99,11 @@ export function VoiceFeedbackModal({
             {message}
           </div>
 
-          {/* 操作提示 */}
+          {/* Action hint */}
           {!voiceState.isProcessing && (
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-500">
-                语音命令：说"确认"、"取消"或"重试"
+                Voice tip: say "confirm", "cancel", or "retry".
               </p>
             </div>
           )}
