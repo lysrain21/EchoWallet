@@ -229,8 +229,17 @@ class VoiceService {
     if (this.availableVoices.length === 0) {
       this.availableVoices = this.synthesis.getVoices()
     }
+
     if (this.availableVoices.length > 0) {
-      utterance.voice = this.availableVoices[0]
+      const preferredLanguage = WALLET_CONFIG.SPEECH_CONFIG.DEFAULT_LANGUAGE?.toLowerCase()
+      const fallbackLanguage = preferredLanguage?.split('-')?.[0]
+
+      const matchingVoice = this.availableVoices.find((voice) => {
+        const lang = voice.lang?.toLowerCase()
+        return lang === preferredLanguage || (fallbackLanguage && lang?.startsWith(`${fallbackLanguage}-`))
+      })
+
+      utterance.voice = matchingVoice || this.availableVoices[0]
     }
     utterance.lang = WALLET_CONFIG.SPEECH_CONFIG.DEFAULT_LANGUAGE
     utterance.rate = options?.rate || 1

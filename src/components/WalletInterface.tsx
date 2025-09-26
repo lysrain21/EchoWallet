@@ -5,7 +5,7 @@
 
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   VoiceButton,
   AccessibleText,
@@ -44,11 +44,42 @@ const TRANSFER_STEPS = [
 
 export function WalletInterface() {
   const voiceState = useVoiceState()
-  const { wallet, balance, network, transactions } = useWalletStore()
+  const { wallet, balance, network, transactions, sharedAddress } = useWalletStore()
+
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
 
   const [hasPlayedWelcome, setHasPlayedWelcome] = useState(false)
   const [topContact, setTopContact] = useState<Contact | null>(null)
   const [recentCommands, setRecentCommands] = useState<string[]>([])
+
+  const primaryAddress = useMemo(() => sharedAddress || wallet?.address || '', [sharedAddress, wallet?.address])
+
+  const shortAddress = useMemo(() => {
+    if (!primaryAddress) return null
+    return `${primaryAddress.slice(0, 6)}…${primaryAddress.slice(-4)}`
+  }, [primaryAddress])
+
+  useEffect(() => {
+    setCopyState('idle')
+  }, [primaryAddress])
+
+  const handleCopyAddress = useCallback(async () => {
+    if (!primaryAddress) return
+
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        await navigator.clipboard.writeText(primaryAddress)
+        setCopyState('copied')
+        voiceService.speak('Address copied to clipboard.')
+      } else {
+        throw new Error('Clipboard API unavailable')
+      }
+    } catch (error) {
+      console.error('Copy address failed:', error)
+      setCopyState('failed')
+      voiceService.speak('Unable to copy the address automatically. Please copy it manually from the screen.')
+    }
+  }, [primaryAddress])
 
   // Welcome prompt + keyboard shortcut for replay
   useEffect(() => {
@@ -118,6 +149,24 @@ export function WalletInterface() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+      <div className="pointer-events-none fixed left-4 right-4 top-4 z-40 flex justify-start sm:left-6 sm:right-auto">
+        <div className="pointer-events-auto inline-flex max-w-full items-center gap-3 rounded-full border border-white/20 bg-black/40 px-4 py-2 text-xs font-medium text-slate-100 backdrop-blur-xl sm:text-sm">
+          <span className="hidden text-emerald-200/80 sm:inline">Current address</span>
+          <span className="truncate text-white/90" aria-live="polite">
+            {shortAddress ?? 'No wallet connected'}
+          </span>
+          <button
+            type="button"
+            onClick={handleCopyAddress}
+            disabled={!primaryAddress}
+            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-100 transition hover:bg-emerald-400/20 focus:outline-none focus:ring-4 focus:ring-emerald-300/40 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-slate-400"
+          >
+            <span className="hidden sm:inline">{copyState === 'copied' ? 'Copied' : 'Copy'}</span>
+            <span className="sm:hidden">{copyState === 'copied' ? '✓' : '⧉'}</span>
+          </button>
+        </div>
+      </div>
+
       <div className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 opacity-60" aria-hidden>
           <div className="absolute -top-32 left-16 h-80 w-80 rounded-full bg-gradient-to-br from-blue-500/40 via-blue-400/20 to-transparent blur-3xl" />

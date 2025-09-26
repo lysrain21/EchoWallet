@@ -31,7 +31,7 @@ export function MinimalVoiceWallet() {
 
   useEffect(() => {
     setCopyState('idle')
-  }, [sharedAddress])
+  }, [sharedAddress, wallet?.address])
 
   useEffect(() => {
     if (copyState === 'copied') {
@@ -81,6 +81,8 @@ export function MinimalVoiceWallet() {
 
   type SpeakOptions = { rate?: number; pitch?: number; volume?: number }
 
+  const primaryAddress = useMemo(() => sharedAddress || wallet?.address || '', [sharedAddress, wallet?.address])
+
   const formattedSharedAddress = useMemo(() => {
     if (!sharedAddress) return ''
     const normalized = sharedAddress.trim()
@@ -90,23 +92,32 @@ export function MinimalVoiceWallet() {
     return prefix ? `${prefix} ${grouped}` : grouped
   }, [sharedAddress])
 
-  const handleCopyAddress = useCallback(async () => {
-    if (!sharedAddress) return
+  const shortPrimaryAddress = useMemo(() => {
+    if (!primaryAddress) return null
+    return `${primaryAddress.slice(0, 6)}…${primaryAddress.slice(-4)}`
+  }, [primaryAddress])
 
-    try {
-      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-        await navigator.clipboard.writeText(sharedAddress)
-        setCopyState('copied')
-        voiceService.speak('Address copied to clipboard.')
-      } else {
-        throw new Error('Clipboard API unavailable')
+  const handleCopyAddress = useCallback(
+    async (targetAddress?: string) => {
+      const addressToCopy = targetAddress || sharedAddress || wallet?.address
+      if (!addressToCopy) return
+
+      try {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          await navigator.clipboard.writeText(addressToCopy)
+          setCopyState('copied')
+          voiceService.speak('Address copied to clipboard.')
+        } else {
+          throw new Error('Clipboard API unavailable')
+        }
+      } catch (error) {
+        console.error('Copy address failed:', error)
+        setCopyState('failed')
+        voiceService.speak('Unable to copy the address automatically. Please copy it manually from the screen.')
       }
-    } catch (error) {
-      console.error('Copy address failed:', error)
-      setCopyState('failed')
-      voiceService.speak('Unable to copy the address automatically. Please copy it manually from the screen.')
-    }
-  }, [sharedAddress])
+    },
+    [sharedAddress, wallet?.address]
+  )
 
   // Initialize voice service and welcome message
   useEffect(() => {
@@ -191,6 +202,24 @@ export function MinimalVoiceWallet() {
         </div>
       </div>
 
+      <div className="pointer-events-none fixed left-4 right-4 top-4 z-40 flex justify-start sm:left-6 sm:right-auto">
+        <div className="pointer-events-auto inline-flex max-w-full items-center gap-3 rounded-full border border-white/15 bg-black/40 px-4 py-2 text-xs font-medium text-slate-100 backdrop-blur-xl sm:text-sm">
+          <span className="hidden text-emerald-200/80 sm:inline">Current address</span>
+          <span className="truncate text-white/90" aria-live="polite">
+            {shortPrimaryAddress ?? 'No wallet connected'}
+          </span>
+          <button
+            type="button"
+            onClick={() => handleCopyAddress(primaryAddress)}
+            disabled={!primaryAddress}
+            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-100 transition hover:bg-emerald-400/20 focus:outline-none focus:ring-4 focus:ring-emerald-300/40 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-slate-400"
+          >
+            <span className="hidden sm:inline">{copyState === 'copied' ? 'Copied' : 'Copy'}</span>
+            <span className="sm:hidden">{copyState === 'copied' ? '✓' : '⧉'}</span>
+          </button>
+        </div>
+      </div>
+
       <main
         className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 py-16 text-center"
         role="main"
@@ -254,7 +283,7 @@ export function MinimalVoiceWallet() {
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={handleCopyAddress}
+                onClick={() => handleCopyAddress(sharedAddress)}
                 className="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-400/10 px-5 py-2 text-sm font-semibold text-emerald-50 transition hover:bg-emerald-400/20 focus:outline-none focus:ring-4 focus:ring-emerald-300/40"
               >
                 <span>{copyState === 'copied' ? 'Copied!' : copyState === 'failed' ? 'Copy failed' : 'Copy address'}</span>
