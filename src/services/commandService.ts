@@ -103,6 +103,10 @@ class CommandService {
           await this.handleContactCommand(parameterText ?? '')
           break
 
+        case 'read_address':
+          await this.handleReadAddress()
+          break
+
         case 'text_input':
           // Handle text input during the transfer flow
           if (transfer.isActive) {
@@ -251,6 +255,26 @@ class CommandService {
       console.error('❌ Wallet import failed:', error)
       voiceService.speak('An error occurred while importing the wallet. Please try again.')
     }
+  }
+
+  /**
+   * Handle read address command
+   */
+  private async handleReadAddress() {
+    const { wallet, setSharedAddress } = useWalletStore.getState()
+
+    if (!wallet) {
+      voiceService.speak('No wallet is available yet. Please create or import a wallet first.')
+      return
+    }
+
+    setSharedAddress(wallet.address)
+
+    const spokenAddress = wallet.address.split('').join(' ')
+    voiceService.speak(
+      `Your wallet address is ${spokenAddress}. The full address is now displayed on screen for sharing.`,
+      { rate: 0.95 }
+    )
   }
 
   /**

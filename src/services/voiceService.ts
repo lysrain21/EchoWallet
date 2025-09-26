@@ -327,6 +327,20 @@ class VoiceService {
       }
     }
 
+    if (
+      text.includes('read address') ||
+      text.includes('show address') ||
+      text.includes('my address') ||
+      text.includes('wallet address') ||
+      text.includes('what is my address')
+    ) {
+      return {
+        type: 'read_address',
+        parameters: { text: transcript },
+        confidence: 0
+      }
+    }
+
     if (text.includes('transfer') || text.includes('send') || text.includes('pay')) {
       const transferInfo = this.parseSimpleTransfer(transcript)
 

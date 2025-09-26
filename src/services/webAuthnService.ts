@@ -17,6 +17,8 @@ import {
   stringToUint8Array,
   uint8ArrayToBase64,
   base64ToUint8Array,
+  buildRelyingPartyEntity,
+  resolveRelyingPartyId,
 } from "@/config/webauthn";
 
 class WebAuthnService {
@@ -136,7 +138,7 @@ class WebAuthnService {
       const createOptions: CredentialCreationOptions = {
         publicKey: {
           challenge,
-          rp: WEBAUTHN_CONFIG.RP,
+          rp: buildRelyingPartyEntity(),
           user: {
             id: userId,
             name: `wallet_${walletAddress.slice(0, 6)}`,
@@ -238,7 +240,7 @@ class WebAuthnService {
           })),
           timeout: WEBAUTHN_CONFIG.TIMEOUT.AUTHENTICATION,
           userVerification: WEBAUTHN_CONFIG.USER_VERIFICATION,
-          rpId: WEBAUTHN_CONFIG.RP.id,
+          rpId: resolveRelyingPartyId(),
         },
       };
 

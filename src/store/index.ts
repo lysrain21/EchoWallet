@@ -16,6 +16,9 @@ interface WalletStore extends AppState {
   // Voice state
   setVoiceState: (voice: Partial<VoiceState>) => void;
 
+  // Shared address display
+  setSharedAddress: (address: string | null) => void;
+
   // Transfer state
   setTransferState: (transfer: Partial<TransferState>) => void;
 
@@ -48,6 +51,7 @@ const initialState: AppState = {
   },
   isLoading: false,
   error: null,
+  sharedAddress: null,
   network: "sepolia",
 };
 
@@ -55,7 +59,14 @@ export const useWalletStore = create<WalletStore>((set) => ({
   ...initialState,
 
   // Wallet actions
-  setWallet: (wallet) => set({ wallet }),
+  setWallet: (wallet) =>
+    set((state) => ({
+      wallet,
+      sharedAddress:
+        wallet && state.sharedAddress && state.sharedAddress.toLowerCase() === wallet.address.toLowerCase()
+          ? state.sharedAddress
+          : null,
+    })),
 
   updateBalance: (balance) => set({ balance }),
 
@@ -76,6 +87,9 @@ export const useWalletStore = create<WalletStore>((set) => ({
     set((state) => ({
       voice: { ...state.voice, ...voiceUpdates },
     })),
+
+  // Shared address display
+  setSharedAddress: (address) => set({ sharedAddress: address }),
 
   // Transfer state
   setTransferState: (transferUpdates) =>

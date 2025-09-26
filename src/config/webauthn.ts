@@ -7,7 +7,7 @@ export const WEBAUTHN_CONFIG = {
   // Relying party information
   RP: {
     name: 'Echo Wallet',
-    id: 'localhost', // Change to actual domain in production
+    defaultId: 'localhost',
   },
 
   // User verification requirements
@@ -114,4 +114,33 @@ export function uint8ArrayToBase64(arr: Uint8Array): string {
  */
 export function base64ToUint8Array(base64: string): Uint8Array {
   return new Uint8Array(atob(base64).split('').map(c => c.charCodeAt(0)))
+}
+
+/**
+ * Resolve the relying party ID based on runtime context.
+ * - Uses the browser's hostname when available.
+ * - Falls back to NEXT_PUBLIC_WEBAUTHN_RP_ID during SSR/static builds.
+ * - Defaults to localhost for local development.
+ */
+export function resolveRelyingPartyId(): string {
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    return window.location.hostname
+  }
+
+  const envId =
+    typeof process !== 'undefined'
+      ? process.env.NEXT_PUBLIC_WEBAUTHN_RP_ID?.trim()
+      : undefined
+
+  return envId || WEBAUTHN_CONFIG.RP.defaultId
+}
+
+/**
+ * Build the relying party entity for WebAuthn requests.
+ */
+export function buildRelyingPartyEntity(): PublicKeyCredentialRpEntity {
+  return {
+    name: WEBAUTHN_CONFIG.RP.name,
+    id: resolveRelyingPartyId(),
+  }
 }

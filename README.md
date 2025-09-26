@@ -30,6 +30,7 @@ npm install
 npm run dev
 # Visit http://localhost:3000
 ```
+> Development runs on the classic Webpack pipeline. If you want to experiment with Turbopack, use `npm run dev -- --turbo` after clearing the `.next` folder.
 
 ### Production Build
 ```bash
@@ -43,6 +44,7 @@ npm start
 |----------|----------|-------------|
 | `NEXT_PUBLIC_INFURA_KEY` | Optional | Infura project key. When omitted, the app falls back to public RPC endpoints (Sepolia: `ethereum-sepolia-rpc.publicnode.com`, Mainnet: `cloudflare-eth.com`). |
 | `NEXT_PUBLIC_ZERODEV_PROJECT_ID` | Recommended | Enables ZeroDev bundler/paymaster integrations for account abstraction demos. |
+| `NEXT_PUBLIC_WEBAUTHN_RP_ID` | Optional | Overrides the relying-party ID used for WebAuthn (set to your production domain, e.g. `echo-wallet.vercel.app`). Defaults to the runtime hostname or `localhost`. |
 
 Create a `.env.local` file if you need to store these values locally.
 
@@ -55,6 +57,7 @@ Create a `.env.local` file if you need to store these values locally.
 | Check balance | “check balance” | Speaks the current ETH balance. |
 | Transfer | “transfer 0.1 eth to Alice” | Starts the guided transfer flow with confirmation. |
 | Contacts | “show contacts” | Reads stored contacts in order of last use. |
+| Read address | “read the address” | Speaks the full wallet address and pins it on screen for sharing. |
 | Cancel | “cancel” / “exit” | Aborts the active voice workflow. |
 
 ## Project Structure
@@ -73,6 +76,7 @@ src/
 - **React error 418 (objects as React children)** – sanitised in `commandService` and `voiceService` by normalising voice command payloads before rendering.
 - **HTTP 401 from Infura** – add `NEXT_PUBLIC_INFURA_KEY` or rely on the built-in public RPC fallbacks (see Environment Variables). Errors now log a clear warning without breaking the UI.
 - **Speech recognition missing** – ensure the browser grants microphone permission and supports the Web Speech API.
+- **ENOENT for `_buildManifest.js.tmp` when running `npm run dev`** – the dev script uses Webpack specifically to avoid this Turbopack regression. If you switch to Turbopack (`--turbo`), clear `.next` before relaunching.
 
 ## Accessibility Principles
 
@@ -89,4 +93,3 @@ src/
 ## License
 
 MIT © Echo Wallet contributors.
-

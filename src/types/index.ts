@@ -61,7 +61,7 @@ export interface TransferRequest {
 
 // Voice-related types
 export interface VoiceCommand {
-  type: 'create_wallet' | 'transfer' | 'balance' | 'import_wallet' | 'transaction_status' | 'contacts' | 'switch_network' | 'text_input'
+  type: 'create_wallet' | 'transfer' | 'balance' | 'import_wallet' | 'transaction_status' | 'contacts' | 'switch_network' | 'read_address' | 'text_input'
   parameters?: Record<string, unknown>
   confidence: number
 }
@@ -95,6 +95,7 @@ export interface AppState {
   transfer: TransferState;
   isLoading: boolean
   error: string | null
+  sharedAddress: string | null
   network: 'mainnet' | 'sepolia' | 'polygon'
 }
 

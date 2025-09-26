@@ -14,11 +14,12 @@ import { voiceService } from '@/services/voiceService'
 import { AccessibleText, KeyboardHelp } from './AccessibilityComponents'
 
 export function MinimalVoiceWallet() {
-  const { wallet } = useWalletStore()
+  const { wallet, sharedAddress } = useWalletStore()
   const voiceState = useVoiceState()
   const [feedbackMessage, setFeedbackMessage] = useState('')
   const [showFeedback, setShowFeedback] = useState(false)
   const [hasPlayedWelcome, setHasPlayedWelcome] = useState(false)
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
 
   // Handle voice feedback events
   const handleVoiceFeedback = useCallback((message: string) => {
@@ -27,6 +28,17 @@ export function MinimalVoiceWallet() {
   }, [])
 
   const { isListening, isProcessing, lastCommand } = voiceState
+
+  useEffect(() => {
+    setCopyState('idle')
+  }, [sharedAddress])
+
+  useEffect(() => {
+    if (copyState === 'copied') {
+      const timer = window.setTimeout(() => setCopyState('idle'), 2400)
+      return () => window.clearTimeout(timer)
+    }
+  }, [copyState])
 
   const startVoiceInteraction = useCallback(() => {
     if (isProcessing) {
@@ -68,6 +80,33 @@ export function MinimalVoiceWallet() {
   }, [isListening, isProcessing, startVoiceInteraction])
 
   type SpeakOptions = { rate?: number; pitch?: number; volume?: number }
+
+  const formattedSharedAddress = useMemo(() => {
+    if (!sharedAddress) return ''
+    const normalized = sharedAddress.trim()
+    const prefix = normalized.startsWith('0x') ? '0x' : ''
+    const body = normalized.startsWith('0x') ? normalized.slice(2) : normalized
+    const grouped = body.toUpperCase().match(/.{1,4}/g)?.join(' ') ?? body.toUpperCase()
+    return prefix ? `${prefix} ${grouped}` : grouped
+  }, [sharedAddress])
+
+  const handleCopyAddress = useCallback(async () => {
+    if (!sharedAddress) return
+
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        await navigator.clipboard.writeText(sharedAddress)
+        setCopyState('copied')
+        voiceService.speak('Address copied to clipboard.')
+      } else {
+        throw new Error('Clipboard API unavailable')
+      }
+    } catch (error) {
+      console.error('Copy address failed:', error)
+      setCopyState('failed')
+      voiceService.speak('Unable to copy the address automatically. Please copy it manually from the screen.')
+    }
+  }, [sharedAddress])
 
   // Initialize voice service and welcome message
   useEffect(() => {
@@ -196,11 +235,37 @@ export function MinimalVoiceWallet() {
             <li>• “Import wallet”</li>
             <li>• “Transfer 0.1 eth to Alice”</li>
             <li>• “Show contacts”</li>
+            <li>• “Read the address”</li>
           </ul>
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3">
             <KeyboardHelp />
           </div>
         </div>
+
+        {sharedAddress && (
+          <div className="mt-6 w-full max-w-lg rounded-3xl border border-emerald-300/40 bg-emerald-500/10 p-6 text-left text-slate-100 shadow-[0_12px_45px_rgba(16,185,129,0.25)]">
+            <h2 className="text-xs uppercase tracking-[0.35em] text-emerald-100/80">Shareable address</h2>
+            <p className="mt-4 text-xl font-semibold tracking-[0.4em] text-white/90">
+              <span className="block break-words">{formattedSharedAddress}</span>
+            </p>
+            <p className="mt-3 text-xs text-emerald-100/75">
+              Ask a friend to copy this line or scan it into their wallet app for a transfer.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={handleCopyAddress}
+                className="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-400/10 px-5 py-2 text-sm font-semibold text-emerald-50 transition hover:bg-emerald-400/20 focus:outline-none focus:ring-4 focus:ring-emerald-300/40"
+              >
+                <span>{copyState === 'copied' ? 'Copied!' : copyState === 'failed' ? 'Copy failed' : 'Copy address'}</span>
+              </button>
+              <span className="text-xs text-emerald-100/70" aria-live="polite">
+                {copyState === 'copied' && 'Address copied to clipboard.'}
+                {copyState === 'failed' && 'Please copy manually.'}
+              </span>
+            </div>
+          </div>
+        )}
       </main>
 
       <VoiceFeedbackModal
