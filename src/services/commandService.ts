@@ -12,15 +12,6 @@ import { VoiceRecognitionOptimizer } from './voiceOptimizer'
 
 class CommandService {
   private isProcessing = false
-  // Step-by-step transfer state (simplified, ETH only)
-  private transferSteps = {
-    isActive: false,
-    step: 'idle' as 'idle' | 'recipient' | 'amount' | 'confirm',
-    recipient: null as { type: 'contact' | 'address', value: string, displayName?: string } | null,
-    amount: '',
-    attempts: 0,
-    maxAttempts: 3
-  }
 
   /**
    * Start voice listening.
@@ -68,7 +59,7 @@ class CommandService {
    * Handle recognized voice command.
    */
   private async handleCommand(command: VoiceCommand) {
-    const { setVoiceState, setLoading, setError } = useWalletStore.getState()
+    const { setVoiceState, setLoading, setError, transfer } = useWalletStore.getState()
     const parameterText = this.getParameterString(command.parameters, 'text')
     const isCompleteTransfer = this.getParameterBoolean(command.parameters, 'isComplete')
 
@@ -94,7 +85,7 @@ class CommandService {
         
         case 'transfer':
           // Check whether a transfer flow is already active
-          if (this.transferSteps.isActive) {
+          if (transfer.isActive) {
             await this.handleTransferStepInput(parameterText ?? '')
           } else {
             // Determine whether the command already includes full transfer details
@@ -114,7 +105,7 @@ class CommandService {
 
         case 'text_input':
           // Handle text input during the transfer flow
-          if (this.transferSteps.isActive) {
+          if (transfer.isActive) {
             await this.handleTransferStepInput(parameterText ?? '')
           } else {
             voiceService.speak('Sorry, I did not understand that command.')
@@ -679,7 +670,7 @@ class CommandService {
     if (optimized.type === 'contact' && optimized.contactName) {
       const contact = contactsService.findContact(optimized.contactName)
       if (contact) {
-        this.transferSteps = {
+        useWalletStore.getState().setTransferState({
           isActive: true,
           step: 'confirm',
           recipient: {
@@ -688,9 +679,7 @@ class CommandService {
             displayName: contact.name
           },
           amount: optimized.amount,
-          attempts: 0,
-          maxAttempts: 3
-        }
+        })
         
         voiceService.speak(`Confirm transfer details: send ${optimized.amount} ETH to ${contact.name}.`)
         this.waitForConfirmation()
@@ -716,26 +705,19 @@ class CommandService {
       voiceService.startListeningForText(
         (text) => this.handleTransferStepInput(text),
         (error) => {
+          const { transfer } = useWalletStore.getState()
           // Ignore "no speech" errors and prompt again gently
           if (error.includes('No speech detected')) {
             // voiceService already handled the spoken feedback
             setTimeout(() => {
-              if (this.transferSteps.isActive && this.transferSteps.step === 'recipient') {
+              if (transfer.isActive && transfer.step === 'recipient') {
                 this.waitForRecipientInput()
               }
             }, 2000)
             return
           }
           
-          this.transferSteps.attempts++
-          if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-            this.cancelTransferFlow('Too many speech recognition failures')
-          } else {
-            const friendlyMessage = error.includes('Speech recognition failed') ? 
-              'Speech recognition failed. Please clearly repeat who to transfer to.' : error
-            voiceService.speak(friendlyMessage)
-            this.waitForRecipientInput()
-          }
+          this.cancelTransferFlow('Too many speech recognition failures')
         }
       )
     }, 1000)
@@ -745,7 +727,8 @@ class CommandService {
    * Handle transfer step input
    */
   private async handleTransferStepInput(input: string) {
-    if (!this.transferSteps.isActive) return
+    const { transfer } = useWalletStore.getState()
+    if (!transfer.isActive) return
 
     // Handle cancel commands
     if (input.includes('cancel') || input.includes('exit')) {
@@ -753,7 +736,7 @@ class CommandService {
       return
     }
 
-    switch (this.transferSteps.step) {
+    switch (transfer.step) {
       case 'recipient':
         await this.handleRecipientInput(input)
         break
@@ -770,6 +753,7 @@ class CommandService {
    * Handle recipient input
    */
   private async handleRecipientInput(input: string) {
+    const { setTransferState } = useWalletStore.getState()
     // Normalize the raw input
     const optimizedInput = VoiceRecognitionOptimizer.optimizeText(input)
     
@@ -787,13 +771,15 @@ class CommandService {
     const contact = contactsService.findContact(contactName)
     
     if (contact) {
-      this.transferSteps.recipient = {
-        type: 'contact',
-        value: contact.address,
-        displayName: contact.name
-      }
+      setTransferState({
+        recipient: {
+          type: 'contact',
+          value: contact.address,
+          displayName: contact.name
+        },
+        step: 'amount'
+      })
       voiceService.speak(`Recipient: ${contact.name}. Please specify the transfer amount now.`)
-      this.transferSteps.step = 'amount'
       this.waitForAmountInput()
       return
     }
@@ -801,26 +787,21 @@ class CommandService {
     // Check whether the input is a wallet address
     const addressMatch = input.match(/(0x[a-fA-F0-9]{40})/)
     if (addressMatch && walletService.isValidAddress(addressMatch[1])) {
-      this.transferSteps.recipient = {
-        type: 'address',
-        value: addressMatch[1]
-      }
+      setTransferState({
+        recipient: {
+          type: 'address',
+          value: addressMatch[1]
+        },
+        step: 'amount'
+      })
       const shortAddress = `${addressMatch[1].slice(0, 6)}...${addressMatch[1].slice(-4)}`
       voiceService.speak(`Recipient address: ${shortAddress}. Please specify the transfer amount now.`)
-      this.transferSteps.step = 'amount'
       this.waitForAmountInput()
       return
     }
 
     // No match found
-    this.transferSteps.attempts++
-    if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-      this.cancelTransferFlow('Could not recognize the recipient information.')
-      return
-    }
-
-    voiceService.speak(`No contact found for "${contactName}". Please add the contact on the web interface or say the contact name again.`)
-    this.waitForRecipientInput()
+    this.cancelTransferFlow('Could not recognize the recipient information.')
   }
 
   /**
@@ -831,26 +812,19 @@ class CommandService {
       voiceService.startListeningForText(
         (text) => this.handleTransferStepInput(text),
         (error) => {
+          const { transfer } = useWalletStore.getState()
           // Ignore "no speech" errors and prompt again gently
           if (error.includes('No speech detected')) {
             // voiceService already handled the spoken feedback
             setTimeout(() => {
-              if (this.transferSteps.isActive && this.transferSteps.step === 'amount') {
+              if (transfer.isActive && transfer.step === 'amount') {
                 this.waitForAmountInput()
               }
             }, 2000)
             return
           }
           
-          this.transferSteps.attempts++
-          if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-            this.cancelTransferFlow('Too many speech recognition failures')
-          } else {
-            const friendlyMessage = error.includes('Speech recognition failed') ? 
-              'Speech recognition failed. Please clearly repeat the transfer amount.' : error
-            voiceService.speak(friendlyMessage)
-            this.waitForAmountInput()
-          }
+          this.cancelTransferFlow('Too many speech recognition failures')
         }
       )
     }, 1000)
@@ -860,6 +834,7 @@ class CommandService {
    * Handle amount input
    */
   private async handleAmountInput(input: string) {
+    const { setTransferState } = useWalletStore.getState()
     // Normalize the amount input
     const optimizedInput = VoiceRecognitionOptimizer.optimizeText(input)
     
@@ -867,14 +842,7 @@ class CommandService {
     const amountMatch = optimizedInput.match(/([0-9.]+)/i)
     
     if (!amountMatch) {
-      this.transferSteps.attempts++
-      if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-        this.cancelTransferFlow('Could not identify the amount.')
-        return
-      }
-      
-      voiceService.speak('Could not understand the amount. Please state a numeric value such as 0.1 or fifty.')
-      this.waitForAmountInput()
+      this.cancelTransferFlow('Could not identify the amount.')
       return
     }
 
@@ -883,21 +851,11 @@ class CommandService {
     // Validate the amount
     const validation = VoiceRecognitionOptimizer.validateAmount(amount)
     if (!validation.isValid) {
-      this.transferSteps.attempts++
-      if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-        this.cancelTransferFlow('Invalid amount format.')
-        return
-      }
-      
-      voiceService.speak(validation.message)
-      this.waitForAmountInput()
+      this.cancelTransferFlow('Invalid amount format.')
       return
     }
 
-    this.transferSteps.amount = validation.corrected
-    
-    // Proceed directly to confirmation using ETH
-    this.transferSteps.step = 'confirm'
+    setTransferState({ amount: validation.corrected, step: 'confirm' })
     voiceService.speak(`Transfer amount: ${validation.corrected} ETH`)
     this.showTransferSummary()
   }
@@ -906,10 +864,11 @@ class CommandService {
    * Present transfer summary and await confirmation
    */
   private showTransferSummary() {
-    const recipientInfo = this.transferSteps.recipient!.displayName || 
-                         `address ${this.transferSteps.recipient!.value.slice(0, 6)}...${this.transferSteps.recipient!.value.slice(-4)}`
+    const { transfer } = useWalletStore.getState()
+    const recipientInfo = transfer.recipient!.displayName || 
+                         `address ${transfer.recipient!.value.slice(0, 6)}...${transfer.recipient!.value.slice(-4)}`
     
-    const summary = `Please confirm the transfer: send ${this.transferSteps.amount} ETH to ${recipientInfo}. Say "confirm" to execute the transfer or "cancel" to exit.`
+    const summary = `Please confirm the transfer: send ${transfer.amount} ETH to ${recipientInfo}. Say "confirm" to execute the transfer or "cancel" to exit.`
     
     voiceService.speak(summary)
     this.waitForConfirmation()
@@ -920,27 +879,30 @@ class CommandService {
    */
   private waitForConfirmation() {
     console.log('⏳ Waiting for final confirmation...')
-    console.log('🔍 Current transfer state:', this.transferSteps)
+    const { transfer } = useWalletStore.getState()
+    console.log('🔍 Current transfer state:', transfer)
     
     setTimeout(() => {
       voiceService.startListeningForText(
         (text) => {
           console.log('🎤 Received speech input during confirmation step:', text)
+          const { transfer } = useWalletStore.getState()
           console.log('📊 Current flow state:', {
-            isActive: this.transferSteps.isActive,
-            step: this.transferSteps.step,
-            recipient: this.transferSteps.recipient?.displayName || this.transferSteps.recipient?.value,
-            amount: this.transferSteps.amount
+            isActive: transfer.isActive,
+            step: transfer.step,
+            recipient: transfer.recipient?.displayName || transfer.recipient?.value,
+            amount: transfer.amount
           })
           this.handleTransferStepInput(text)
         },
         (error) => {
           console.log('❌ Speech recognition error during confirmation step:', error)
+          const { transfer } = useWalletStore.getState()
           // Ignore "no speech" errors and prompt again gently
           if (error.includes('No speech detected')) {
             // voiceService already handled the spoken feedback
             setTimeout(() => {
-              if (this.transferSteps.isActive && this.transferSteps.step === 'confirm') {
+              if (transfer.isActive && transfer.step === 'confirm') {
                 voiceService.speak('Please say "confirm" to execute the transfer or "cancel" to exit.')
                 this.waitForConfirmation()
               }
@@ -948,15 +910,7 @@ class CommandService {
             return
           }
           
-          this.transferSteps.attempts++
-          if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-            this.cancelTransferFlow('Too many speech recognition failures')
-          } else {
-            const friendlyMessage = error.includes('Speech recognition failed') ? 
-              'Speech recognition failed. Please say "confirm" or "cancel" again.' : error
-            voiceService.speak(friendlyMessage)
-            this.waitForConfirmation()
-          }
+          this.cancelTransferFlow('Too many speech recognition failures')
         }
       )
     }, 1000)
@@ -967,12 +921,12 @@ class CommandService {
    */
   private async handleConfirmationInput(input: string) {
     console.log('🔍 Handling confirmation input:', input)
+    const { transfer } = useWalletStore.getState()
     console.log('📊 Transfer state at confirmation:', {
-      isActive: this.transferSteps.isActive,
-      step: this.transferSteps.step,
-      recipient: this.transferSteps.recipient,
-      amount: this.transferSteps.amount,
-      attempts: this.transferSteps.attempts
+      isActive: transfer.isActive,
+      step: transfer.step,
+      recipient: transfer.recipient,
+      amount: transfer.amount,
     })
     
     if (input.includes('confirm') || input.includes('yes') || input.includes('ok')) {
@@ -990,13 +944,8 @@ class CommandService {
     } else {
       console.log('🔄 Input unclear; asking again')
       console.log('🔍 User said:', `"${input}"`)
-      this.transferSteps.attempts++
-      if (this.transferSteps.attempts >= this.transferSteps.maxAttempts) {
-        this.cancelTransferFlow('Too many failed confirmations')
-      } else {
-        voiceService.speak('Please clearly say "confirm" to execute the transfer or "cancel" to exit.')
-        this.waitForConfirmation()
-      }
+      voiceService.speak('Please clearly say "confirm" to execute the transfer or "cancel" to exit.')
+      this.waitForConfirmation()
     }
   }
 
@@ -1004,23 +953,23 @@ class CommandService {
    * Execute step-by-step transfer
    */
   private async executeStepTransfer() {
-    const { wallet } = useWalletStore.getState()
+    const { wallet, transfer } = useWalletStore.getState()
     
     console.log('🚀 Starting step-by-step transfer')
     console.log('💰 Transfer details:', {
-      recipient: this.transferSteps.recipient,
-      amount: this.transferSteps.amount
+      recipient: transfer.recipient,
+      amount: transfer.amount
     })
     
-    if (!wallet || !this.transferSteps.recipient) {
+    if (!wallet || !transfer.recipient) {
       console.error('❌ Transfer information is incomplete')
       this.cancelTransferFlow('Transfer information is incomplete')
       return
     }
 
     const transferRequest: TransferRequest = {
-      to: this.transferSteps.recipient.value,
-      amount: this.transferSteps.amount,
+      to: transfer.recipient.value,
+      amount: transfer.amount,
       token: undefined, // ETH only
       tokenSymbol: 'eth'
     }
@@ -1030,8 +979,8 @@ class CommandService {
       console.log('📤 Sending transfer request:', transferRequest)
       
       // Mark contact as used when applicable
-      if (this.transferSteps.recipient.type === 'contact') {
-        const contact = contactsService.findContactByAddress(this.transferSteps.recipient.value)
+      if (transfer.recipient.type === 'contact') {
+        const contact = contactsService.findContactByAddress(transfer.recipient.value)
         if (contact) {
           contactsService.markContactUsed(contact.id)
           console.log('📞 Marked contact as used:', contact.name)
@@ -1062,21 +1011,19 @@ class CommandService {
    * Reset transfer steps
    */
   private resetTransferSteps() {
-    this.transferSteps = {
+    useWalletStore.getState().setTransferState({
       isActive: false,
       step: 'idle',
       recipient: null,
       amount: '',
-      attempts: 0,
-      maxAttempts: 3
-    }
+    })
   }
 
   /**
    * Start guided step-by-step transfer flow
    */
   private async startStepByStepTransferFlow() {
-    const { wallet } = useWalletStore.getState()
+    const { wallet, setTransferState } = useWalletStore.getState()
     
     if (!wallet) {
       voiceService.speak('Please create or import a wallet first.')
@@ -1084,14 +1031,12 @@ class CommandService {
     }
 
     // Reset transfer state
-    this.transferSteps = {
+    setTransferState({
       isActive: true,
       step: 'recipient',
       recipient: null,
       amount: '',
-      attempts: 0,
-      maxAttempts: 3
-    }
+    })
 
     // Begin by asking for the contact
     voiceService.speak('Starting transfer flow. Please say the contact name.')

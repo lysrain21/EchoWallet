@@ -73,12 +73,26 @@ export interface VoiceState {
   error?: string
 }
 
+// Transfer state for step-by-step flow
+export interface TransferState {
+  isActive: boolean;
+  step: 'idle' | 'recipient' | 'amount' | 'token' | 'confirm';
+  recipient: {
+    type: 'contact' | 'address';
+    value: string;
+    displayName?: string;
+  } | null;
+  amount: string;
+  token: string;
+}
+
 // Application state types
 export interface AppState {
   wallet: WalletAccount | null
   balance: WalletBalance
   transactions: Transaction[]
   voice: VoiceState
+  transfer: TransferState;
   isLoading: boolean
   error: string | null
   network: 'mainnet' | 'sepolia' | 'polygon'

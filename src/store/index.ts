@@ -4,7 +4,7 @@
  */
 
 import { create } from "zustand";
-import { AppState, WalletAccount, Transaction, VoiceState, WalletBalance } from "@/types";
+import { AppState, WalletAccount, Transaction, VoiceState, WalletBalance, TransferState } from "@/types";
 
 interface WalletStore extends AppState {
   // Wallet actions
@@ -15,6 +15,9 @@ interface WalletStore extends AppState {
 
   // Voice state
   setVoiceState: (voice: Partial<VoiceState>) => void;
+
+  // Transfer state
+  setTransferState: (transfer: Partial<TransferState>) => void;
 
   // App state
   setLoading: (loading: boolean) => void;
@@ -35,6 +38,13 @@ const initialState: AppState = {
   voice: {
     isListening: false,
     isProcessing: false,
+  },
+  transfer: {
+    isActive: false,
+    step: 'idle',
+    recipient: null,
+    amount: '',
+    token: 'ETH',
   },
   isLoading: false,
   error: null,
@@ -67,6 +77,12 @@ export const useWalletStore = create<WalletStore>((set) => ({
       voice: { ...state.voice, ...voiceUpdates },
     })),
 
+  // Transfer state
+  setTransferState: (transferUpdates) =>
+    set((state) => ({
+      transfer: { ...state.transfer, ...transferUpdates },
+    })),
+
   // App state
   setLoading: (isLoading) => set({ isLoading }),
 
@@ -84,6 +100,7 @@ export const useBalance = () => useWalletStore((state) => state.balance);
 export const useTransactions = () =>
   useWalletStore((state) => state.transactions);
 export const useVoiceState = () => useWalletStore((state) => state.voice);
+export const useTransferState = () => useWalletStore((state) => state.transfer);
 export const useAppState = () =>
   useWalletStore((state) => ({
     isLoading: state.isLoading,
