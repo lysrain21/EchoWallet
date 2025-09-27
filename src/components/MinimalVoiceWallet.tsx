@@ -20,6 +20,7 @@ export function MinimalVoiceWallet() {
   const [showFeedback, setShowFeedback] = useState(false)
   const [hasPlayedWelcome, setHasPlayedWelcome] = useState(false)
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const [isClient, setIsClient] = useState(false)
 
   // Handle voice feedback events
   const handleVoiceFeedback = useCallback((message: string) => {
@@ -32,6 +33,11 @@ export function MinimalVoiceWallet() {
   useEffect(() => {
     setCopyState('idle')
   }, [sharedAddress, wallet?.address])
+
+  // 确保客户端渲染
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
     if (copyState === 'copied') {
@@ -127,6 +133,8 @@ export function MinimalVoiceWallet() {
       handleVoiceFeedback(text)
     }
 
+    if (!isClient) return
+
     const hasPlayedBefore = localStorage.getItem('echo-welcome-played')
     
     if (!hasPlayedBefore && !hasPlayedWelcome) {
@@ -208,7 +216,7 @@ export function MinimalVoiceWallet() {
         <div className="absolute bottom-[-18%] right-[-12%] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_center,_rgba(100,234,132,0.08),_transparent_60%)] blur-3xl" />
       </div>
 
-      <div className="pointer-events-none fixed left-4 right-4 top-4 z-40 flex justify-start sm:left-6 sm:right-auto">
+      <div className="pointer-events-none fixed right-4 top-4 z-40 flex justify-end">
         <div className="pointer-events-auto inline-flex max-w-full items-center gap-3 rounded-full border border-white/15 bg-black/40 px-4 py-2 text-xs font-medium text-slate-100 backdrop-blur-xl sm:text-sm">
           <span className="hidden text-emerald-200/80 sm:inline">Current address</span>
           <span className="truncate text-white/90" aria-live="polite">
@@ -218,7 +226,7 @@ export function MinimalVoiceWallet() {
             type="button"
             onClick={() => handleCopyAddress(primaryAddress)}
             disabled={!primaryAddress}
-            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-100 transition hover:bg-emerald-400/20 focus:outline-none focus:ring-4 focus:ring-emerald-300/40 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-slate-400"
+            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/30 bg-emerald-400/5 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.25em] text-emerald-100/80 transition-colors duration-200 hover:text-emerald-100 focus:outline-none disabled:cursor-not-allowed disabled:border-white/10 disabled:text-slate-400"
           >
             <span className="hidden sm:inline">{copyState === 'copied' ? 'Copied' : 'Copy'}</span>
             <span className="sm:hidden">{copyState === 'copied' ? '✓' : '⧉'}</span>
@@ -239,14 +247,19 @@ export function MinimalVoiceWallet() {
         aria-label="Echo Wallet minimal voice interface"
       >
         <AccessibleText text="Echo Wallet" level="h1" className="text-4xl font-light text-white md:text-5xl" />
-        <p className="mt-3 max-w-xl text-sm text-slate-300">
-          Minimal mode focuses entirely on voice. When you’re ready, say “create wallet”, “check balance”, or any supported command—Echo Wallet listens and responds instantly.
-        </p>
+        <div className="mt-6 max-w-2xl space-y-3">
+          <p className="text-base font-medium text-white/90 leading-relaxed">
+            Minimal mode focuses entirely on voice.
+          </p>
+          <p className="text-sm text-slate-300/80 leading-relaxed">
+            When you're ready, say <span className="font-mono text-emerald-300/90">"create wallet"</span>, <span className="font-mono text-emerald-300/90">"check balance"</span>, or any supported command—Echo Wallet listens and responds instantly.
+          </p>
+        </div>
 
         <button
           type="button"
           onClick={handleScreenTouch}
-          className={`relative mt-10 flex h-56 w-56 items-center justify-center rounded-full border border-white/20 bg-white/10 text-sm font-medium uppercase tracking-[0.35em] backdrop-blur-xl transition focus:outline-none focus:ring-4 focus:ring-blue-300/40 md:h-64 md:w-64 ${isListening ? 'animate-[pulse_3s_ease-in-out_infinite]' : ''}`}
+          className={`relative mt-10 flex h-56 w-56 items-center justify-center rounded-full border border-white/15 bg-white/5 text-sm font-medium uppercase tracking-[0.35em] backdrop-blur-xl transition-colors duration-200 focus:outline-none md:h-64 md:w-64 ${isListening ? 'animate-[pulse_3s_ease-in-out_infinite]' : ''}`}
         >
           <span className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/40 to-transparent blur-2xl" aria-hidden />
           <span className="absolute inset-4 rounded-full bg-slate-950/60" aria-hidden />
@@ -290,7 +303,7 @@ export function MinimalVoiceWallet() {
               <button
                 type="button"
                 onClick={() => handleCopyAddress(sharedAddress)}
-                className="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-400/10 px-5 py-2 text-sm font-semibold text-emerald-50 transition hover:bg-emerald-400/20 focus:outline-none focus:ring-4 focus:ring-emerald-300/40"
+                className="inline-flex items-center gap-2 rounded-full border border-emerald-200/40 bg-emerald-400/5 px-5 py-2 text-sm font-medium text-emerald-50/80 transition-colors duration-200 hover:text-emerald-50 focus:outline-none"
               >
                 <span>{copyState === 'copied' ? 'Copied!' : copyState === 'failed' ? 'Copy failed' : 'Copy address'}</span>
               </button>

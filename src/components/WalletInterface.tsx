@@ -19,6 +19,7 @@ import { contactsService } from '@/services/contactsService'
 import { useWalletStore, useVoiceState } from '@/store'
 import type { Contact } from '@/types/contacts'
 import type { WalletAccount, WalletBalance } from '@/types'
+import Spline from '@splinetool/react-spline'
 
 const VOICE_PROMPTS = [
   'Create wallet – generate a new wallet address',
@@ -50,6 +51,7 @@ export function WalletInterface() {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
 
   const [hasPlayedWelcome, setHasPlayedWelcome] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const [topContact, setTopContact] = useState<Contact | null>(null)
   const [recentCommands, setRecentCommands] = useState<string[]>([])
 
@@ -63,6 +65,11 @@ export function WalletInterface() {
   useEffect(() => {
     setCopyState('idle')
   }, [primaryAddress])
+
+  // 确保客户端渲染
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const handleCopyAddress = useCallback(async () => {
     if (!primaryAddress) return
@@ -84,9 +91,9 @@ export function WalletInterface() {
 
   // Welcome prompt + keyboard shortcut for replay
   useEffect(() => {
-    const hasPlayedBefore = typeof window !== 'undefined'
-      ? localStorage.getItem('echo-welcome-played') === 'true'
-      : false
+    if (!isClient) return
+
+    const hasPlayedBefore = localStorage.getItem('echo-welcome-played') === 'true'
 
     if (!hasPlayedBefore && !hasPlayedWelcome) {
       const timeout = setTimeout(() => {
@@ -96,7 +103,7 @@ export function WalletInterface() {
       }, 900)
       return () => clearTimeout(timeout)
     }
-  }, [hasPlayedWelcome])
+  }, [hasPlayedWelcome, isClient])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -149,8 +156,22 @@ export function WalletInterface() {
   }, [voiceState.isListening, voiceState.isProcessing])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
-      <div className="pointer-events-none fixed left-4 right-4 top-4 z-40 flex justify-start sm:left-6 sm:right-auto">
+    <div className="relative min-h-screen w-full overflow-hidden bg-slate-950 text-slate-100">
+      {/* Spline 3D Background */}
+      <div className="fixed inset-0 z-0" aria-hidden>
+        <Spline
+          scene="https://prod.spline.design/sf2J4a8epSyBmnlL/scene.splinecode"
+          style={{ width: '100%', height: '100%' }}
+        />
+      </div>
+      
+      {/* Original gradient overlays for subtle enhancement */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden z-[1]" aria-hidden>
+        <div className="absolute -top-24 left-[-10%] h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle_at_center,_rgba(58,123,255,0.08),_transparent_60%)] blur-3xl" />
+        <div className="absolute bottom-[-18%] right-[-12%] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_center,_rgba(100,234,132,0.08),_transparent_60%)] blur-3xl" />
+      </div>
+
+      <div className="pointer-events-none fixed right-4 top-4 z-40 flex justify-end">
         <div className="pointer-events-auto inline-flex max-w-full items-center gap-3 rounded-full border border-white/20 bg-black/40 px-4 py-2 text-xs font-medium text-slate-100 backdrop-blur-xl sm:text-sm">
           <span className="hidden text-emerald-200/80 sm:inline">Current address</span>
           <span className="truncate text-white/90" aria-live="polite">
@@ -160,14 +181,14 @@ export function WalletInterface() {
             type="button"
             onClick={handleCopyAddress}
             disabled={!primaryAddress}
-            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-100 transition hover:bg-emerald-400/20 focus:outline-none focus:ring-4 focus:ring-emerald-300/40 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-slate-400"
+            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/30 bg-emerald-400/5 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.25em] text-emerald-100/80 transition-colors duration-200 hover:text-emerald-100 focus:outline-none disabled:cursor-not-allowed disabled:border-white/10 disabled:text-slate-400"
           >
             <span className="hidden sm:inline">{copyState === 'copied' ? 'Copied' : 'Copy'}</span>
             <span className="sm:hidden">{copyState === 'copied' ? '✓' : '⧉'}</span>
           </button>
         </div>
       </div>
-      <div className="relative overflow-hidden">
+      <div className="relative z-20">
         <main className="relative z-10 mx-auto flex max-w-6xl flex-col gap-16 px-4 pb-24 pt-16 sm:px-8 lg:pt-20">
         <HeroSection />
         <VoiceInteractionPanel

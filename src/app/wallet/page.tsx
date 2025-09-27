@@ -1,29 +1,36 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { WalletInterface } from '@/components/WalletInterface'
 import { MinimalVoiceWallet } from '@/components/MinimalVoiceWallet'
 import Spline from '@splinetool/react-spline'
 import Link from 'next/link'
 
 export default function WalletPage() {
-  const [useMinimalInterface, setUseMinimalInterface] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedMode = localStorage.getItem('echo-interface-mode')
-      return savedMode ? savedMode === 'minimal' : true // 默认使用 minimal mode
+  const [useMinimalInterface, setUseMinimalInterface] = useState(true) // 默认使用 minimal mode
+  const [isClient, setIsClient] = useState(false)
+
+  // 确保客户端渲染
+  useEffect(() => {
+    setIsClient(true)
+    // 从 localStorage 读取保存的模式
+    const savedMode = localStorage.getItem('echo-interface-mode')
+    if (savedMode) {
+      setUseMinimalInterface(savedMode === 'minimal')
     }
-    return true // 默认使用 minimal mode
-  })
+  }, [])
 
   const toggleInterface = () => {
     const nextMode = !useMinimalInterface
     setUseMinimalInterface(nextMode)
-    localStorage.setItem('echo-interface-mode', nextMode ? 'minimal' : 'standard')
+    if (isClient) {
+      localStorage.setItem('echo-interface-mode', nextMode ? 'minimal' : 'standard')
+    }
   }
 
   const toggleButtonClass = useMinimalInterface
-    ? 'fixed top-5 right-4 z-50 rounded-full border border-white/25 bg-slate-950/60 backdrop-blur-xl px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-white transition hover:bg-slate-900/80 focus:outline-none focus:ring-2 focus:ring-white/40'
-    : 'fixed top-5 right-4 z-50 rounded-full border border-blue-400/40 bg-slate-950/60 backdrop-blur-xl px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-white transition hover:bg-slate-900/80 focus:outline-none focus:ring-2 focus:ring-blue-300/60'
+    ? 'rounded-full border border-white/20 bg-slate-950/50 backdrop-blur-xl px-4 py-2 text-[11px] font-medium uppercase tracking-[0.35em] text-white/90 transition-colors duration-200 hover:text-white focus:outline-none'
+    : 'rounded-full border border-blue-400/30 bg-slate-950/50 backdrop-blur-xl px-4 py-2 text-[11px] font-medium uppercase tracking-[0.35em] text-white/90 transition-colors duration-200 hover:text-white focus:outline-none'
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100">
@@ -46,22 +53,24 @@ export default function WalletPage() {
       </div>
       
       {/* Navigation and Toggle Buttons */}
-      <Link
-        href="/"
-        className="fixed top-5 left-5 z-50 rounded-full border border-white/20 bg-slate-950/60 backdrop-blur-xl px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-white transition hover:bg-slate-900/80 focus:outline-none focus:ring-2 focus:ring-white/40"
-        aria-label="Back to home page"
-      >
-        ← Home
-      </Link>
-      
-      <button
-        type="button"
-        onClick={toggleInterface}
-        className={toggleButtonClass}
-        aria-label={useMinimalInterface ? 'Switch to standard interface' : 'Switch to minimal interface'}
-      >
-        {useMinimalInterface ? 'STANDARD MODE' : 'MINIMAL MODE'}
-      </button>
+      <div className="fixed top-5 left-5 z-50 flex gap-3">
+        <Link
+          href="/"
+          className="rounded-full border border-white/20 bg-slate-950/50 backdrop-blur-xl px-4 py-2 text-[11px] font-medium uppercase tracking-[0.35em] text-white/90 transition-colors duration-200 hover:text-white focus:outline-none"
+          aria-label="Back to home page"
+        >
+          ← Home
+        </Link>
+        
+        <button
+          type="button"
+          onClick={toggleInterface}
+          className={toggleButtonClass}
+          aria-label={useMinimalInterface ? 'Switch to standard interface' : 'Switch to minimal interface'}
+        >
+          {useMinimalInterface ? 'STANDARD MODE' : 'MINIMAL MODE'}
+        </button>
+      </div>
     </div>
   )
 }
