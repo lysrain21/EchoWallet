@@ -62,8 +62,8 @@ export function VoiceFeedbackModal({
       >
         <div className="
           max-w-2xl w-full mx-auto
-          bg-white/95 backdrop-blur-sm
-          border-2 border-gray-200
+          bg-slate-900/95 backdrop-blur-sm
+          border-2 border-slate-600
           rounded-2xl shadow-2xl
           p-6 md:p-8
           transform transition-all duration-300 ease-out
@@ -77,7 +77,7 @@ export function VoiceFeedbackModal({
               ${voiceState.isProcessing ? 'bg-yellow-500 animate-spin' : ''}
               ${!voiceState.isListening && !voiceState.isProcessing ? 'bg-blue-500' : ''}
             `} />
-            <span className="text-sm font-medium text-gray-600">
+            <span className="text-sm font-medium text-slate-300">
               {voiceState.isListening && 'Listening'}
               {voiceState.isProcessing && 'Processing'}
               {!voiceState.isListening && !voiceState.isProcessing && 'System feedback'}
@@ -88,7 +88,7 @@ export function VoiceFeedbackModal({
           <div
             id="voice-feedback-content"
             className="
-              text-center text-gray-900
+              text-center text-slate-100
               text-lg md:text-xl font-medium
               leading-relaxed
               focus:outline-none
@@ -102,7 +102,7 @@ export function VoiceFeedbackModal({
           {/* Action hint */}
           {!voiceState.isProcessing && (
             <div className="mt-4 text-center">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-400">
                 Voice tip: say "confirm", "cancel", or "retry".
               </p>
             </div>
