@@ -107,13 +107,223 @@ a:hover, button:hover {
   }
 }
 
+/* 声纹动画 */
+@keyframes soundwave {
+  0%, 100% { 
+    transform: scaleY(1);
+    opacity: 0.6;
+  }
+  50% { 
+    transform: scaleY(1.5);
+    opacity: 1;
+  }
+}
+
+.soundwave-bar {
+  animation: soundwave 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* 滚动动画 */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 反向动画关键帧 */
+@keyframes slide-down-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+}
+
+@keyframes slide-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+}
+
+@keyframes scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes fade-out-down {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+}
+
+/* 进入动画 */
+.animate-slide-up {
+  animation: slide-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 退出动画 */
+.animate-slide-down-out {
+  animation: slide-down-out 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-slide-out-left {
+  animation: slide-out-left 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-slide-out-right {
+  animation: slide-out-right 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-scale-out {
+  animation: scale-out 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-fade-out-down {
+  animation: fade-out-down 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 初始状态 */
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(60px);
+}
+
+.scroll-animate-left {
+  opacity: 0;
+  transform: translateX(-60px);
+}
+
+.scroll-animate-right {
+  opacity: 0;
+  transform: translateX(60px);
+}
+
+.scroll-animate-scale {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+.scroll-animate-fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
 /* 减少动画偏好支持 */
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse,
   .animate-spin,
   .animate-in,
   .slide-in-from-bottom-4,
-  .fade-in-0 {
+  .fade-in-0,
+  .soundwave-bar,
+  .animate-slide-up,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-scale-in,
+  .animate-fade-in-up,
+  .animate-slide-down-out,
+  .animate-slide-out-left,
+  .animate-slide-out-right,
+  .animate-scale-out,
+  .animate-fade-out-down {
     animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
