@@ -11,6 +11,7 @@ import {
   AccessibleText,
   WalletStatus,
   KeyboardHelp,
+  ReadForMeButton,
 } from './AccessibilityComponents'
 import { ContactManager } from './ContactManager'
 import { voiceService } from '@/services/voiceService'
@@ -117,13 +118,8 @@ export function WalletInterface() {
   }, [voiceState.isListening, voiceState.isProcessing])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+    <div className="min-h-screen text-slate-100">
       <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 opacity-60" aria-hidden>
-          <div className="absolute -top-32 left-16 h-80 w-80 rounded-full bg-gradient-to-br from-blue-500/40 via-blue-400/20 to-transparent blur-3xl" />
-          <div className="absolute top-1/3 right-10 h-96 w-96 rounded-full bg-gradient-to-br from-emerald-400/30 via-transparent to-transparent blur-3xl" />
-        </div>
-
         <main className="relative z-10 mx-auto flex max-w-6xl flex-col gap-16 px-4 pb-24 pt-16 sm:px-8 lg:pt-20">
         <HeroSection />
         <VoiceInteractionPanel
@@ -145,6 +141,9 @@ export function WalletInterface() {
           <ContactSection />
         </main>
       </div>
+      
+      {/* Read for Me Button */}
+      <ReadForMeButton />
     </div>
   )
 }
@@ -155,37 +154,37 @@ export function WalletInterface() {
 
 function HeroSection() {
   return (
-    <section className="flex flex-col gap-8 rounded-[32px] bg-white/5 p-10 backdrop-blur-xl shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] md:flex-row md:items-center md:justify-between">
+    <section className="flex flex-col gap-8 rounded-[32px] border border-white/10 bg-slate-950/60 backdrop-blur-2xl shadow-[0_32px_120px_-60px_rgba(15,23,42,0.8)] p-10 md:flex-row md:items-center md:justify-between">
       <div className="max-w-xl space-y-4">
-        <p className="text-sm uppercase tracking-[0.4em] text-slate-300">Voice-first Web3</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-slate-300/80">Voice-first Web3</p>
         <AccessibleText
           text="Echo Wallet"
           level="h1"
           className="text-4xl font-semibold text-white md:text-5xl"
         />
-        <p className="text-lg text-slate-300">
+        <p className="text-lg text-slate-300/90">
           Speak naturally and Echo Wallet handles the rest—secure wallet creation, biometric recovery,
           transfers, and contact management without ever needing to look at a screen.
         </p>
-        <div className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
-          <Badge icon="waveform">Web Speech Optimiser</Badge>
-          <Badge icon="faceid">WebAuthn Secure</Badge>
-          <Badge icon="hand.raised">WCAG AA Ready</Badge>
+        <div className="flex flex-wrap items-center gap-3 text-sm text-slate-300/80">
+          <Badge>Web Speech Optimiser</Badge>
+          <Badge>WebAuthn Secure</Badge>
+          <Badge>WCAG AA Ready</Badge>
         </div>
       </div>
       <div className="relative mx-auto w-full max-w-md">
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/20 to-white/0 blur-2xl" aria-hidden />
+        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/30 via-transparent to-transparent blur-2xl" aria-hidden />
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/60 p-8 backdrop-blur-xl">
           <AccessibleText text="Live Voice Waveform" level="h2" className="sr-only" />
           <div className="h-60 w-full rounded-2xl bg-gradient-to-br from-blue-500/20 via-blue-400/10 to-transparent p-2">
-            <div className="flex h-full w-full items-center justify-center rounded-xl bg-black/40">
+            <div className="flex h-full w-full items-center justify-center rounded-xl bg-slate-950/80">
               <span className="text-6xl text-blue-300/90" aria-hidden>
                 <span className="animate-pulse">⏺</span>
               </span>
             </div>
           </div>
-          <p className="mt-6 text-center text-sm text-slate-300">
-            Say “create wallet” to begin. Echo Wallet guides you with subtle sound and voice prompts.
+          <p className="mt-6 text-center text-sm text-slate-300/80">
+            Say "create wallet" to begin. Echo Wallet guides you with subtle sound and voice prompts.
           </p>
         </div>
       </div>
@@ -193,10 +192,10 @@ function HeroSection() {
   )
 }
 
-function Badge({ icon, children }: { icon: string; children: React.ReactNode }) {
+function Badge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium backdrop-blur">
-      <span aria-hidden>{icon}</span>
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200/80">
+      <span className="h-1.5 w-1.5 rounded-full bg-lime-300" aria-hidden />
       {children}
     </span>
   )
@@ -218,10 +217,10 @@ function VoiceInteractionPanel({ voiceStateLabel, recentCommands, lastCommand }:
     : lastCommand?.type ?? '—'
 
   return (
-    <section className="grid gap-6 rounded-[32px] border border-white/10 bg-white/5 p-8 backdrop-blur-xl shadow-[0_20px_50px_-35px_rgba(15,23,42,1)] lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <section className="grid gap-6 rounded-[32px] border border-white/10 bg-slate-950/60 backdrop-blur-2xl shadow-[0_32px_120px_-60px_rgba(15,23,42,0.8)] p-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="space-y-6">
         <AccessibleText text="Voice Control" level="h2" className="text-2xl font-semibold text-white" />
-        <p className="text-slate-300">
+        <p className="text-slate-300/90">
           Hold the button or press Space to speak. Echo Wallet listens, confirms, and keeps you updated with voice prompts.
         </p>
         <VoiceButton className="w-full py-8 text-xl" />
@@ -262,7 +261,7 @@ function VoiceInteractionPanel({ voiceStateLabel, recentCommands, lastCommand }:
 
 function WalletStatusSection() {
   return (
-    <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 backdrop-blur-xl text-slate-100 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.9)]">
+    <section className="rounded-3xl border border-white/10 bg-slate-950/60 backdrop-blur-2xl p-6 text-slate-100 shadow-[0_32px_120px_-60px_rgba(15,23,42,0.8)]">
       <WalletStatus />
     </section>
   )
@@ -346,8 +345,8 @@ function MissionControlGrid({ wallet, balance, network, transactionsCount, topCo
 
 function GlassCard({ title, caption, children }: { title: string; caption: string; children: React.ReactNode }) {
   return (
-    <article className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 text-slate-200 backdrop-blur-xl shadow-[0_18px_40px_-35px_rgba(15,23,42,0.9)]">
-      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{caption}</p>
+    <article className="rounded-3xl border border-white/10 bg-slate-950/60 backdrop-blur-2xl p-6 text-slate-200 shadow-[0_32px_120px_-60px_rgba(15,23,42,0.8)]">
+      <p className="text-xs uppercase tracking-[0.3em] text-slate-400/80">{caption}</p>
       <h3 className="mt-2 text-lg font-semibold text-white">{title}</h3>
       <div className="mt-4 text-sm">{children}</div>
     </article>
@@ -371,7 +370,7 @@ function TransferJourney() {
           {TRANSFER_STEPS.map((step) => (
             <article
               key={step.title}
-              className="min-w-[280px] flex-1 rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-900/40 p-6 backdrop-blur-xl text-slate-200 shadow-[0_22px_45px_-40px_rgba(56,189,248,0.8)]"
+              className="min-w-[280px] flex-1 rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950/70 to-slate-950/40 backdrop-blur-2xl p-6 text-slate-200 shadow-[0_32px_120px_-60px_rgba(15,23,42,0.8)]"
             >
               <h3 className="text-lg font-semibold text-white">{step.title}</h3>
               <p className="mt-3 text-sm text-slate-300">{step.description}</p>
@@ -397,19 +396,19 @@ function TransferJourney() {
 function SecurityAndHelp() {
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-      <article className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 backdrop-blur-xl text-slate-200">
+      <article className="rounded-3xl border border-white/10 bg-slate-950/60 backdrop-blur-2xl p-6 text-slate-200 shadow-[0_32px_120px_-60px_rgba(15,23,42,0.8)]">
         <h3 className="text-xl font-semibold text-white">Biometric security</h3>
-        <p className="mt-3 text-sm text-slate-300">
+        <p className="mt-3 text-sm text-slate-300/90">
           Echo Wallet encrypts mnemonics locally using WebAuthn. Face ID, Touch ID, Windows Hello, and security keys are all supported.
         </p>
-        <ul className="mt-4 space-y-2 text-sm text-slate-300">
+        <ul className="mt-4 space-y-2 text-sm text-slate-300/85">
           <li>• Wallets are bound to your device and biometric signature.</li>
-          <li>• Recovery is instant—just say “import wallet”.</li>
+          <li>• Recovery is instant—just say "import wallet".</li>
           <li>• No sensitive data ever leaves your machine.</li>
         </ul>
       </article>
 
-      <article className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-slate-900/40 p-6 backdrop-blur-xl text-slate-200">
+      <article className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-slate-950/60 backdrop-blur-2xl p-6 text-slate-200 shadow-[0_32px_120px_-60px_rgba(15,23,42,0.8)]">
         <h3 className="text-xl font-semibold text-white">Voice cheat sheet</h3>
         <ul className="space-y-2 text-sm text-slate-300">
           {VOICE_PROMPTS.map((prompt) => (
@@ -430,12 +429,12 @@ function SecurityAndHelp() {
 
 function ContactSection() {
   return (
-    <section className="rounded-[32px] border border-white/10 bg-white/5 p-8 backdrop-blur-xl shadow-[0_28px_60px_-45px_rgba(15,23,42,0.9)]">
+    <section className="rounded-[32px] border border-white/10 bg-slate-950/60 backdrop-blur-2xl p-8 shadow-[0_32px_120px_-60px_rgba(15,23,42,0.8)]">
       <div className="mb-6">
         <AccessibleText text="Contacts" level="h2" className="text-2xl font-semibold text-white" />
-        <p className="text-sm text-slate-300">Manage recurring recipients, nicknames, and quick transfers. Everything stays local to your device.</p>
+        <p className="text-sm text-slate-300/90">Manage recurring recipients, nicknames, and quick transfers. Everything stays local to your device.</p>
       </div>
-      <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-4 sm:p-6">
+      <div className="rounded-3xl border border-white/10 bg-slate-900/60 backdrop-blur-xl p-4 sm:p-6">
         <ContactManager />
       </div>
     </section>
