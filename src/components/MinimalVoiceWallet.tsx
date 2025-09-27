@@ -7,11 +7,11 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useWalletStore, useVoiceState } from '@/store'
-import { VoiceWaveform } from './VoiceWaveform'
 import { VoiceFeedbackModal } from './VoiceFeedbackModal'
 import { commandService } from '@/services/commandService'
 import { voiceService } from '@/services/voiceService'
-import { AccessibleText, KeyboardHelp } from './AccessibilityComponents'
+import { AccessibleText, KeyboardHelp, ReadForMeButton } from './AccessibilityComponents'
+import Spline from '@splinetool/react-spline'
 
 export function MinimalVoiceWallet() {
   const { wallet, sharedAddress } = useWalletStore()
@@ -182,17 +182,23 @@ export function MinimalVoiceWallet() {
   }, [isListening, isProcessing])
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 left-12 h-80 w-80 rounded-full bg-gradient-to-br from-blue-500/30 via-transparent to-transparent blur-[120px]" aria-hidden />
-        <div className="absolute top-1/2 right-0 h-64 w-64 rounded-full bg-gradient-to-br from-emerald-400/20 via-transparent to-transparent blur-[110px]" aria-hidden />
-        <div className="absolute inset-0 opacity-25" aria-hidden>
-          <VoiceWaveform className="h-full w-full" />
-        </div>
+    <div className="relative min-h-screen w-full overflow-hidden bg-slate-950 text-slate-100">
+      {/* Spline 3D Background */}
+      <div className="fixed inset-0 z-0" aria-hidden>
+        <Spline
+          scene="https://prod.spline.design/sf2J4a8epSyBmnlL/scene.splinecode"
+          style={{ width: '100%', height: '100%' }}
+        />
+      </div>
+      
+      {/* Original gradient overlays for subtle enhancement */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden z-[1]" aria-hidden>
+        <div className="absolute -top-24 left-[-10%] h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle_at_center,_rgba(58,123,255,0.08),_transparent_60%)] blur-3xl" />
+        <div className="absolute bottom-[-18%] right-[-12%] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_center,_rgba(100,234,132,0.08),_transparent_60%)] blur-3xl" />
       </div>
 
       <main
-        className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 py-16 text-center"
+        className="relative z-20 mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 py-16 text-center"
         role="main"
         tabIndex={0}
         onKeyDown={(event) => {
@@ -274,6 +280,9 @@ export function MinimalVoiceWallet() {
         onClose={() => setShowFeedback(false)}
         autoCloseDelay={4000}
       />
+
+      {/* Read for Me Button */}
+      <ReadForMeButton />
 
       <div className="sr-only">
         <h1>Echo Wallet - Voice-first Web3 wallet</h1>

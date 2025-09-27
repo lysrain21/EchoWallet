@@ -70,7 +70,7 @@ export function ContactManager() {
       {/* Toggle add contact form */}
       <AccessibleButton
         onClick={() => setIsAddingContact(!isAddingContact)}
-        className="w-full p-4 bg-blue-600 text-white rounded-lg"
+        className="w-full p-4 bg-slate-700 hover:bg-slate-600 text-white rounded-lg border border-slate-600"
         ariaLabel="Add new contact"
       >
         {isAddingContact ? 'Cancel' : 'Add contact'}
@@ -79,7 +79,7 @@ export function ContactManager() {
       {/* Add contact form */}
       {isAddingContact && (
         <form
-          className="space-y-4 p-4 bg-gray-50 rounded-lg"
+          className="space-y-4 p-4 bg-slate-800/50 border border-slate-600 rounded-lg"
           onSubmit={(e) => {
             e.preventDefault()
             handleAddContact()
@@ -87,7 +87,7 @@ export function ContactManager() {
           aria-label="New contact details"
         >
           <div>
-            <label htmlFor="contact-name" className="block text-sm font-medium mb-2">
+            <label htmlFor="contact-name" className="block text-sm font-medium mb-2 text-slate-200">
               Contact name *
             </label>
             <input
@@ -95,7 +95,7 @@ export function ContactManager() {
               type="text"
               value={newContact.name}
               onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
               placeholder="e.g., Alice"
               required
               aria-required="true"
@@ -103,7 +103,7 @@ export function ContactManager() {
           </div>
 
           <div>
-            <label htmlFor="contact-address" className="block text-sm font-medium mb-2">
+            <label htmlFor="contact-address" className="block text-sm font-medium mb-2 text-slate-200">
               Wallet address *
             </label>
             <input
@@ -111,7 +111,7 @@ export function ContactManager() {
               type="text"
               value={newContact.address}
               onChange={(e) => setNewContact({ ...newContact, address: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
               placeholder="0x..."
               required
               aria-required="true"
@@ -119,7 +119,7 @@ export function ContactManager() {
           </div>
 
           <div>
-            <label htmlFor="contact-nickname" className="block text-sm font-medium mb-2">
+            <label htmlFor="contact-nickname" className="block text-sm font-medium mb-2 text-slate-200">
               Nickname (optional)
             </label>
             <input
@@ -127,14 +127,14 @@ export function ContactManager() {
               type="text"
               value={newContact.nickname}
               onChange={(e) => setNewContact({ ...newContact, nickname: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
               placeholder="e.g., boss, friend"
             />
           </div>
 
           <AccessibleButton
             type="submit"
-            className="w-full p-3 bg-green-600 text-white rounded-lg"
+            className="w-full p-3 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg border border-emerald-600"
             ariaLabel="Confirm add contact"
           >
             Save contact
@@ -147,7 +147,7 @@ export function ContactManager() {
         <AccessibleText text={`Contacts (${contacts.length})`} level="h3" />
         
         {contacts.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">
+          <div className="p-4 text-center text-slate-400 bg-slate-800/30 border border-slate-700 rounded-lg">
             No contacts yet. Add your first contact.
           </div>
         ) : (
@@ -155,20 +155,20 @@ export function ContactManager() {
             {contacts.map((contact) => (
               <div
                 key={contact.id}
-                className="p-4 bg-white border border-gray-200 rounded-lg"
+                className="p-4 bg-slate-800/50 border border-slate-600 rounded-lg"
                 role="listitem"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h4 className="font-medium text-lg">{contact.name}</h4>
+                    <h4 className="font-medium text-lg text-slate-100">{contact.name}</h4>
                     {contact.nickname && (
-                      <p className="text-sm text-gray-600">Nickname: {contact.nickname}</p>
+                      <p className="text-sm text-slate-300">Nickname: {contact.nickname}</p>
                     )}
-                    <p className="text-sm text-gray-500 font-mono break-all mt-1">
+                    <p className="text-sm text-slate-400 font-mono break-all mt-1">
                       {contact.address}
                     </p>
                     {contact.usageCount > 0 && (
-                      <p className="text-xs text-green-600 mt-1">
+                      <p className="text-xs text-emerald-400 mt-1">
                         Used {contact.usageCount} times
                       </p>
                     )}
@@ -177,7 +177,7 @@ export function ContactManager() {
                   <div className="flex flex-col space-y-2 ml-4">
                     <AccessibleButton
                       onClick={() => speakContactInfo(contact)}
-                      className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded"
+                      className="px-3 py-1 text-sm bg-slate-600 hover:bg-slate-500 text-slate-100 rounded border border-slate-500"
                       ariaLabel={`Announce contact ${contact.name}`}
                     >
                       Announce
@@ -185,7 +185,7 @@ export function ContactManager() {
 
                     <AccessibleButton
                       onClick={() => handleRemoveContact(contact)}
-                      className="px-3 py-1 text-sm bg-red-100 text-red-800 rounded"
+                      className="px-3 py-1 text-sm bg-red-800/50 hover:bg-red-700 text-red-200 rounded border border-red-600"
                       ariaLabel={`Delete contact ${contact.name}`}
                     >
                       Delete
@@ -206,18 +206,18 @@ export function ContactManager() {
             {contactsService.getFrequentContacts().map((contact) => (
               <div
                 key={contact.id}
-                className="p-3 bg-green-50 border border-green-200 rounded-lg"
+                className="p-3 bg-emerald-900/30 border border-emerald-600 rounded-lg"
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <span className="font-medium">{contact.name}</span>
-                    <span className="text-sm text-gray-600 ml-2">
+                    <span className="font-medium text-slate-100">{contact.name}</span>
+                    <span className="text-sm text-slate-300 ml-2">
                       Used {contact.usageCount} times
                     </span>
                   </div>
                   <AccessibleButton
                     onClick={() => speakContactInfo(contact)}
-                    className="px-3 py-1 text-sm bg-green-600 text-white rounded"
+                    className="px-3 py-1 text-sm bg-emerald-700 hover:bg-emerald-600 text-white rounded border border-emerald-600"
                     ariaLabel={`Announce frequent contact ${contact.name}`}
                   >
                     Announce
@@ -230,9 +230,9 @@ export function ContactManager() {
       )}
 
       {/* Voice transfer tips */}
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <AccessibleText text="Voice Transfer Tips" level="h4" />
-        <ul className="mt-2 space-y-1 text-sm text-gray-700">
+      <div className="p-4 bg-slate-800/50 border border-slate-600 rounded-lg">
+        <AccessibleText text="Voice Transfer Tips" level="h4" className="text-slate-100" />
+        <ul className="mt-2 space-y-1 text-sm text-slate-300">
           <li>• "Transfer 0.1 ETH to Alice" – send funds to a contact</li>
           <li>• "Quick transfer 0.05 ETH" – send to the most recent contact</li>
           <li>• "Transfer 0.2 ETH to boss" – use nicknames for transfers</li>
