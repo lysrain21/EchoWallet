@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useId, type ReactNode } from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
+import { useEffect, useRef, useId, useState, type ReactNode } from 'react'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import Spline from '@splinetool/react-spline'
 
@@ -220,6 +219,8 @@ export default function Home() {
 }
 
 function HeroSection({ heroRadiantId }: { heroRadiantId: string }) {
+  const [isFlipped, setIsFlipped] = useState(false)
+
   return (
     <section className="min-h-screen flex items-center">
       <div className="w-full grid gap-12 rounded-[32px] border border-white/10 bg-slate-950/60 backdrop-blur-2xl shadow-[0_32px_120px_-60px_rgba(15,23,42,0.8)] p-8 md:p-12 lg:p-16 md:grid-cols-[1.2fr_1fr] md:items-center">
@@ -239,7 +240,12 @@ function HeroSection({ heroRadiantId }: { heroRadiantId: string }) {
           <SecondaryButton href="https://github.com/lysrain21/EchoWallet" ariaLabel="View Echo Wallet on GitHub">
             View GitHub
           </SecondaryButton>
-          <WatchDemoDialog />
+          <button
+            onClick={() => setIsFlipped(!isFlipped)}
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/25 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+          >
+            {isFlipped ? 'Hide Demo' : 'Watch Demo'}
+          </button>
         </div>
         <div className="flex flex-wrap gap-3 text-xs text-slate-300/80">
           <Chip>ERC-4337 Ready</Chip>
@@ -248,28 +254,50 @@ function HeroSection({ heroRadiantId }: { heroRadiantId: string }) {
         </div>
       </div>
 
-      <div className="relative mx-auto flex w-full max-w-md justify-center">
+      <div className="relative mx-auto flex w-full max-w-lg justify-center">
         <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-blue-500/30 via-transparent to-transparent blur-2xl" aria-hidden />
-        <div className="relative w-full rounded-[28px] border border-white/10 bg-slate-900/60 p-9 backdrop-blur-xl">
-          <VisuallyHidden asChild>
-            <h2>Voice preview module</h2>
-          </VisuallyHidden>
-          <div className="flex flex-col items-center gap-6">
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-slate-950/90">
-              <div className="absolute inset-0 rounded-full border border-white/10" aria-hidden />
-              <div className="absolute h-[116%] w-[116%] rounded-full bg-gradient-to-br from-blue-400/25 to-blue-500/15 blur-xl" aria-hidden />
-              <EthereumLogo />
-            </div>
-            <div className="flex w-full flex-col items-center gap-3">
-              <div className="flex h-16 w-full items-center justify-center rounded-full border border-blue-500/30 bg-blue-500/10 px-4">
-                <span className="mr-3 inline-flex h-3 w-3 animate-pulse rounded-full bg-lime-300" aria-hidden />
-                <span className="text-sm font-medium tracking-widest text-blue-100/90 uppercase">Press to Speak</span>
+        <div className="relative w-full min-h-[420px] rounded-[28px] border border-white/10 bg-slate-900/60 backdrop-blur-xl p-6">
+          <div className="flip-container h-full" style={{ perspective: '1000px' }}>
+            <div className={`flip-inner h-full transition-transform duration-700 ${isFlipped ? 'rotate-y-180' : ''}`} style={{ transformStyle: 'preserve-3d' }}>
+              {/* Front side - Voice preview */}
+              <div className="flip-front" style={{ backfaceVisibility: 'hidden' }}>
+                <VisuallyHidden asChild>
+                  <h2>Voice preview module</h2>
+                </VisuallyHidden>
+                <div className="flex flex-col items-center justify-center gap-6 h-full">
+                  <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-slate-950/90">
+                    <div className="absolute inset-0 rounded-full border border-white/10" aria-hidden />
+                    <div className="absolute h-[116%] w-[116%] rounded-full bg-gradient-to-br from-blue-400/25 to-blue-500/15 blur-xl" aria-hidden />
+                    <EthereumLogo />
+                  </div>
+                  <div className="flex w-full flex-col items-center gap-3">
+                    <Link href="/wallet" className="flex h-16 w-full items-center justify-center rounded-full border border-blue-500/30 bg-blue-500/10 px-4 transition hover:border-blue-400/50 hover:bg-blue-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60">
+                      <span className="mr-3 inline-flex h-3 w-3 animate-pulse rounded-full bg-lime-300" aria-hidden />
+                      <span className="text-sm font-medium tracking-widest text-blue-100/90 uppercase">Tap to Speak</span>
+                    </Link>
+                    <SoundWavePattern id={heroRadiantId} />
+                  </div>
+                  <p className="text-center text-xs text-slate-300/80">
+                    Live speech visualisation with haptic mirroring keeps low-vision users informed at every turn.
+                  </p>
+                </div>
               </div>
-              <SoundWavePattern id={heroRadiantId} />
+              
+              {/* Back side - Video */}
+              <div className="flip-back absolute inset-0" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                <div className="h-full w-full overflow-hidden rounded-2xl bg-black">
+                  {isFlipped && (
+                    <iframe
+                      src="https://www.youtube.com/embed/er7RhyRqSB4"
+                      title="Echo Wallet Demo"
+                      className="h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  )}
+                </div>
+              </div>
             </div>
-            <p className="text-center text-xs text-slate-300/80">
-              Live speech visualisation with haptic mirroring keeps low-vision users informed at every turn.
-            </p>
           </div>
         </div>
       </div>
@@ -305,44 +333,6 @@ function SecondaryButton({ href, children, ariaLabel }: { href: string; children
   )
 }
 
-function WatchDemoDialog() {
-  return (
-    <Dialog.Root>
-      <Dialog.Trigger asChild>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/25 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-        >
-          Watch Demo
-        </button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" />
-        <Dialog.Content className="fixed inset-x-4 top-1/2 z-50 mx-auto w-full max-w-3xl -translate-y-1/2 rounded-3xl border border-white/15 bg-slate-900/95 p-8 shadow-2xl focus:outline-none">
-          <div className="flex items-start justify-between gap-8">
-            <Dialog.Title className="text-xl font-semibold text-white">Echo Wallet demo</Dialog.Title>
-            <Dialog.Close asChild>
-              <button
-                type="button"
-                className="rounded-full border border-white/15 px-3 py-1 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-white/25 hover:bg-white/10"
-              >
-                Close
-              </button>
-            </Dialog.Close>
-          </div>
-          <p className="mt-2 text-sm text-slate-300/85">
-            Experience the full voice-driven flow—from wallet creation to confident transfers. Captioned for screen readers.
-          </p>
-          <div className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80">
-            <div className="flex h-full items-center justify-center text-sm text-slate-400">
-              Demo video placeholder
-            </div>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  )
-}
 
 function Chip({ children }: { children: ReactNode }) {
   return (
@@ -632,7 +622,6 @@ function FooterCta() {
         <SecondaryButton href="https://github.com/lysrain21/EchoWallet" ariaLabel="Open GitHub repository">
           View on GitHub
         </SecondaryButton>
-        <WatchDemoDialog />
       </div>
       <nav className="flex flex-wrap justify-center gap-6 text-sm text-slate-300/80">
         <Link className="transition hover:text-slate-100" href="/docs">

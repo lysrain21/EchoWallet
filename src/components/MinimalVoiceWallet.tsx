@@ -184,7 +184,7 @@ export function MinimalVoiceWallet() {
       voiceService.speak = originalSpeak
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [handleVoiceFeedback, hasPlayedWelcome, isListening, isProcessing, lastCommand, showHelp, startVoiceInteraction])
+  }, [handleVoiceFeedback, hasPlayedWelcome, isClient, isListening, isProcessing, lastCommand, showHelp, startVoiceInteraction])
 
   const lastCommandDescription = useMemo(() => {
     if (typeof lastCommand?.parameters?.text === 'string') {

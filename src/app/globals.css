@@ -304,6 +304,38 @@ a:hover, button:hover {
   transform: translateY(30px);
 }
 
+/* 3D 翻转效果 */
+.flip-container {
+  perspective: 1000px;
+}
+
+.flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.flip-front, .flip-back {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+}
+
+.flip-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotateY(180deg);
+}
+
 /* 减少动画偏好支持 */
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse,
@@ -321,9 +353,11 @@ a:hover, button:hover {
   .animate-slide-out-left,
   .animate-slide-out-right,
   .animate-scale-out,
-  .animate-fade-out-down {
+  .animate-fade-out-down,
+  .flip-inner {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+    transition: none !important;
   }
 }
