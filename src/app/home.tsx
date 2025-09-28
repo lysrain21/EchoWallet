@@ -288,7 +288,7 @@ function HeroSection({ heroRadiantId }: { heroRadiantId: string }) {
                 <div className="h-full w-full overflow-hidden rounded-2xl bg-black">
                   {isFlipped && (
                     <iframe
-                      src="https://www.youtube.com/embed/er7RhyRqSB4"
+                      src="https://www.youtube.com/embed/PjUYn0jIVws"
                       title="Echo Wallet Demo"
                       className="h-full w-full"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
